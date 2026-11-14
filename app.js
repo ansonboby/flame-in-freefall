@@ -127,6 +127,7 @@ function hiParts(run, o2Live) {
 
 /* ---------- matching ---------- */
 const TOKEN = (s) => String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
+const fmtOutcome = (o) => String(o || "").replace(/_/g, " ");
 function matchRuns() {
   const f = FUELS[state.fuel]; if (!f) return [];
   // non-solid fuels (droplet/gas) match their own category, never the solid pool
@@ -219,7 +220,7 @@ function renderMatched(matches, parts) {
     const p = r.o2_conc_pct != null ? hiParts(r, r.o2_conc_pct) : null;
     return `<div class="match-card" data-id="${r.id}">
       <div class="m-top"><b>${esc(r.investigation)}</b><span class="m-hi">${p ? "HI " + p.hi.toFixed(1) : "HI —"}</span></div>
-      <div class="m-sub">${esc(r.fuel)} · ${esc(r.outcome)} · ${r.o2_conc_pct ?? "—"}% O2${r.jev_verified ? " · VERIFIED" : ""}</div>
+      <div class="m-sub">${esc(r.fuel)} · ${esc(fmtOutcome(r.outcome))} · ${r.o2_conc_pct ?? "—"}% O2${r.jev_verified ? " · VERIFIED" : ""}</div>
       <button class="replay">REPLAY RUN CONDITIONS</button>
     </div>`;
   }).join("") : `<p class="explainer">No ${state.fuel === "heptane" ? "droplet/gas" : "solid-fuel"} run matches this material.</p>`;
@@ -270,7 +271,7 @@ function runQA(q) {
   $("qa-out").innerHTML = verdict + (hits.length ? hits.map(({ r }) =>
     `<div class="qa-hit">${esc((r.key_finding || r.objective || "").split(/(?<=[.!?]) /)[0])} <b>[${esc(r.investigation)}]</b>
      — <span class="insp-link" style="cursor:pointer" data-id="${r.id}">inspector</span></div>`).join("")
-    : `<p class="explainer">No verified PSI run for that — showing nothing rather than guessing.</p>`);
+    : `<p class="explainer">No verified PSI run for that; showing nothing rather than guessing.</p>`);
   document.querySelectorAll("#qa-out [data-id]").forEach(a => a.onclick = () => openInspector(a.dataset.id));
 }
 
@@ -486,7 +487,7 @@ function loop(t) { try { tick(t); } catch (e) { requestAnimationFrame(loop); } }
 function renderMatrix() {
   const uniq = (k) => [...new Set(RECORDS.map(r => r[k]).filter(Boolean))].sort();
   $("filters").innerHTML = ["investigation", "pillar", "outcome"].map(k =>
-    `<select data-k="${k}"><option value="">ALL ${k.toUpperCase()}</option>${uniq(k).map(v => `<option>${esc(v)}</option>`).join("")}</select>`).join("");
+    `<select data-k="${k}"><option value="">ALL ${k.toUpperCase()}</option>${uniq(k).map(v => `<option value="${esc(v)}">${esc(fmtOutcome(v))}</option>`).join("")}</select>`).join("");
   document.querySelectorAll("#filters select").forEach(s => s.onchange = renderMatrixTable);
   renderMatrixTable();
   const envs = [...new Set(RECORDS.map(r => r.environment))], outs = ["spread", "smoldering", "extinguished", "no_burn"];
@@ -499,7 +500,7 @@ function renderMatrix() {
       <dl class="kv">
         <dt>HI</dt><dd><b style="color:var(--orange)">${r.hazard_index}</b></dd>
         <dt>run</dt><dd>${esc(r.investigation)} ${esc(r.id.split("-").pop())}</dd>
-        <dt>outcome</dt><dd>${esc(r.outcome)}</dd>
+        <dt>outcome</dt><dd>${esc(fmtOutcome(r.outcome))}</dd>
         <dt>O2 / atm</dt><dd>${r.o2_conc_pct ?? "—"}% / ${r.pressure_atm ?? "—"}</dd>
         <dt>flow</dt><dd>${r.airflow_cm_s ?? "—"} cm/s</dd>
         <dt>jev</dt><dd>${r.jev_verified ? "VERIFIED " + r.jev_evidence_score + "/10" : "UNVERIFIED"}</dd>
@@ -511,7 +512,7 @@ function renderMatrix() {
     DATA GAPS — VERIFIED SOLID RUNS WITHOUT STATED O2/PRESSURE (${gaps.length})</h2>` +
     (gaps.length ? `<table><tr><th>RUN</th><th>MATERIAL</th><th>OUTCOME</th><th>WHY NOT SCORED</th></tr>` +
       gaps.map(r => `<tr class="rowbtn" data-id="${r.id}"><td>${esc(r.investigation)}</td><td>${esc(r.fuel)}</td>
-        <td>${esc(r.outcome)}</td><td style="color:var(--dim)">abstract states no O2/pressure — null, not guessed</td></tr>`).join("") + `</table>`
+        <td>${esc(fmtOutcome(r.outcome))}</td><td style="color:var(--dim)">abstract states no O2/pressure — null, not guessed</td></tr>`).join("") + `</table>`
       : `<p class="explainer">None.</p>`);
   document.querySelectorAll("#compare .rowbtn").forEach(c => c.onclick = () => openInspector(c.dataset.id));
 }
@@ -522,7 +523,7 @@ function renderMatrixTable() {
   $("matrix-table").innerHTML = `<table><tr><th>HI</th><th>MATERIAL</th><th>INVESTIGATION</th><th>O2%</th><th>atm</th><th>g</th><th>OUTCOME</th><th>PILLAR</th><th>JEV</th></tr>` +
     rows.map(r => `<tr class="rowbtn" data-id="${r.id}"><td>${r.hazard_index != null ? `<span class="hi-bar" style="width:${Math.max(6, r.hazard_index * 0.6)}px"></span> ${r.hazard_index}` : "—"}</td>
       <td>${esc(r.fuel)}</td><td>${esc(r.investigation)}</td><td>${r.o2_conc_pct ?? "—"}</td><td>${r.pressure_atm ?? "—"}</td><td>${r.gravity_g ?? "—"}</td>
-      <td>${esc(r.outcome)}</td><td>${esc(r.pillar)}</td><td><span class="badge ${r.jev_verified ? "yes" : "no"}">${r.jev_verified ? "VERIFIED" : "FLAGGED"}</span></td></tr>`).join("") + `</table>`;
+      <td>${esc(fmtOutcome(r.outcome))}</td><td>${esc(r.pillar)}</td><td><span class="badge ${r.jev_verified ? "yes" : "no"}">${r.jev_verified ? "VERIFIED" : "FLAGGED"}</span></td></tr>`).join("") + `</table>`;
   document.querySelectorAll("#matrix-table .rowbtn").forEach(c => c.onclick = () => openInspector(c.dataset.id));
 }
 
