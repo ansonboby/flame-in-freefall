@@ -48,7 +48,7 @@ async function init() {
   ]);
   renderTop(); wireViews(); wireControls(); renderChips(); renderMatrix(); renderImpact();
   $("tick-text").textContent = `ARTEMIS II — commander: "make the fire alarm go off when you're still about 80,000 miles from home" · spacecraft fire safety is not history`;
-  updateAll(); requestAnimationFrame(loop);
+  updateAll(); loop(performance.now()); // sync first paint: rAF never fires in a background tab, so load-time frame must not wait for it
 }
 
 function renderTop() {
