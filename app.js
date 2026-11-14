@@ -253,6 +253,8 @@ function replayRun(id) {
 function renderChips() {
   $("chips").innerHTML = QUESTIONS.map(q => `<button>${esc(q)}</button>`).join("");
   [...$("chips").children].forEach(b => b.onclick = () => runQA(b.textContent));
+  $("qa-go").onclick = () => { const v = $("qa-q").value.trim(); if (v) runQA(v); };
+  $("qa-q").addEventListener("keydown", e => e.key === "Enter" && $("qa-go").click());
 }
 function runQA(q) {
   $("qa-out").dataset.q = q;
@@ -550,11 +552,11 @@ function openInspector(id) {
     <dl class="kv">
       <dt>O2 / pressure</dt><dd>${r.o2_conc_pct ?? "—"}% @ ${r.pressure_atm ?? "—"} atm</dd>
       <dt>airflow / gravity</dt><dd>${r.airflow_cm_s ?? "—"} cm/s · ${r.gravity_g ?? "—"} g</dd>
-      <dt>environment</dt><dd>${esc(r.environment)}</dd>
-      <dt>fuel shape / size</dt><dd>${esc(r.fuel_shape)} / ${esc(r.fuel_size)}</dd>
-      <dt>pillar</dt><dd>${esc(r.pillar)}</dd>
+      <dt>environment</dt><dd>${esc(r.environment ?? "—")}</dd>
+      <dt>fuel shape / size</dt><dd>${esc(r.fuel_shape ?? "—")} / ${esc(r.fuel_size ?? "—")}</dd>
+      <dt>pillar</dt><dd>${esc(r.pillar ?? "—")}</dd>
       <dt>sensors</dt><dd>${esc([].concat(r.sensors || []).join(", ")) || "—"}</dd>
-      <dt>variables vs runs</dt><dd>${esc(r.variables_vs_other_runs)}</dd>
+      <dt>variables vs runs</dt><dd>${esc(r.variables_vs_other_runs ?? "—")}</dd>
     </dl>
     <h4>JEV VERIFICATION (independent decision model)</h4>
     <dl class="kv">
