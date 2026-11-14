@@ -259,14 +259,18 @@ function renderChips() {
 function runQA(q) {
   $("qa-out").dataset.q = q;
   const toks = TOKEN(q);
+  const vm = RECORDS.find(r => toks.some(t => TOKEN(r.fuel).some(x => x === t)));
+  const verdict = vm
+    ? `<div class="qa-verdict">VERIFIED RUN — <b>${esc(vm.fuel)}</b> [${esc(vm.investigation)}] · ${vm.hazard_index != null ? "HI " + vm.hazard_index : "not scored"} · ${esc(((vm.outcome || "").replace(/_/g, " ")).split(/(?<=[.!?]) /)[0])} · <span class="insp-link" style="cursor:pointer" data-id="${vm.id}">inspector</span></div>`
+    : "";
   const hits = RECORDS.map(r => {
     const hay = TOKEN([r.objective, r.key_finding, r.evidence_quote, r.fuel].join(" "));
     return { r, s: toks.reduce((a, t) => a + (hay.some(x => x.startsWith(t) || t.startsWith(x)) ? 1 : 0), 0) / toks.length };
   }).filter(h => h.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
-  $("qa-out").innerHTML = hits.length ? hits.map(({ r }) =>
+  $("qa-out").innerHTML = verdict + (hits.length ? hits.map(({ r }) =>
     `<div class="qa-hit">${esc((r.key_finding || r.objective || "").split(/(?<=[.!?]) /)[0])} <b>[${esc(r.investigation)}]</b>
      — <span class="insp-link" style="cursor:pointer" data-id="${r.id}">inspector</span></div>`).join("")
-    : `<p class="explainer">No archive match for that question.</p>`;
+    : `<p class="explainer">No verified PSI run for that — showing nothing rather than guessing.</p>`);
   document.querySelectorAll("#qa-out [data-id]").forEach(a => a.onclick = () => openInspector(a.dataset.id));
 }
 
