@@ -5,3 +5,16 @@
 !style.css
 !app.js
 !.gitignore
+!PITCH.md
+!README.md
+!og.png
+!BUILD_GUIDE.md
+!sources.csv
+!records.json
+!story.json
+!needs_review.json
+!corpus/
+!corpus/**
+!*.py
+!pitch/
+!pitch/**
