@@ -10,13 +10,13 @@ let RECORDS = [], META = {}, STORY = {};
 const state = { o2: 21, flow: 0, press: 1.0, gravity: 1, fuel: null, env: "station", split: false };
 
 const ENV_PRESETS = {
-  iss:    { label: "ISS STATION",        sub: "21.0% O2 / 1.00 atm", o2: 21,   press: 1.00,
+  iss:    { label: "ISS STATION",        sub: "21.0% O2 · 1.00 atm · 0g", o2: 21,   press: 1.00, g: 0,
             why: "Standard sea-level-like air; baseline for all current material certification." },
-  orion:  { label: "ORION TRANSIT",      sub: "21.0% O2 / 1.00 atm", o2: 21,   press: 1.00,
+  orion:  { label: "ORION TRANSIT",      sub: "21.0% O2 · 1.00 atm · 0g", o2: 21,   press: 1.00, g: 0,
             why: "Cabin-scale spacecraft atmosphere — the reference for NASA-STD-6001 tests." },
-  lunar:  { label: "LUNAR BASE",         sub: "34.0% O2 / 0.54 atm", o2: 34,   press: 0.54,
+  lunar:  { label: "LUNAR BASE",         sub: "34.0% O2 · 0.54 atm · 0.16g", o2: 34, press: 0.54, g: 0.16,
             why: "Enriched O2 aids suited EVA operations but raises material flammability sharply." },
-  rover:  { label: "ROVER CABIN",        sub: "34.0% O2 / 0.57 atm", o2: 34,   press: 0.57,
+  rover:  { label: "ROVER CABIN",        sub: "34.0% O2 · 0.57 atm · 0.16g", o2: 34, press: 0.57, g: 0.16,
             why: "Same enriched atmosphere in a small vehicle volume — fast smoke transport, high risk." },
 };
 const FUELS = {
@@ -74,6 +74,11 @@ function wireControls() {
     state.o2 = e.o2; state.press = e.press;
     $("o2").value = e.o2; $("press").value = e.press;
     $("env-explainer").textContent = e.why;
+    if (e.g != null) {  // crew environment implies its gravity — never leave the slider stale
+      state.gravity = e.g;
+      const gb = document.querySelector(`#grav-seg button[data-g="${e.g}"]`);
+      if (gb) document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === gb));
+    }
     setActive($("env-presets"), b);
     updateAll();
   });
@@ -122,9 +127,11 @@ function hiParts(run, o2Live) {
 const TOKEN = (s) => String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
 function matchRuns() {
   const f = FUELS[state.fuel]; if (!f) return [];
+  // non-solid fuels (droplet/gas) match their own category, never the solid pool
+  const cats = state.fuel === "heptane" ? ["droplet", "gas"] : ["solid"];
   const q = TOKEN(f.fuel);
-  return RECORDS.filter(r => r.fuel_category === "solid").map(r => {
-    const hay = TOKEN(r.fuel + " " + r.objective);
+  return RECORDS.filter(r => cats.includes(r.fuel_category)).map(r => {
+    const hay = TOKEN(r.fuel + " " + r.objective + " " + r.fuel_category);
     const tf = q.filter(t => hay.some(x => x.startsWith(t) || t.startsWith(x))).length / (q.length || 1);
     const envD = r.o2_conc_pct != null
       ? 1 - clamp(Math.abs(r.o2_conc_pct - state.o2) / 20) * 0.5 : 0.5;
@@ -138,27 +145,62 @@ function updateAll() {
   $("o2-out").textContent = state.o2.toFixed(1) + " %";
   $("flow-out").textContent = state.flow + " cm/s";
   $("press-out").textContent = state.press.toFixed(2) + " atm";
+  const isDroplet = state.fuel === "heptane";
+  const cool = isDroplet && state.o2 < 30;
   $("chamber-tag").textContent = state.split
     ? `COMBUSTION CHAMBER — SPLIT MODE · 1g VS 0g`
     : `COMBUSTION CHAMBER — ${state.gravity === 0 ? "0g MICROGRAVITY REGIME" : state.gravity.toFixed(2) + "g REGIME"} · ${ENV_PRESETS[state.env].label}`;
 
-  // gauge: live O from telemetry, S/E/C from the closest matched solid run
+  // gauge: live O from telemetry, S/E/C from the closest matched run of the fuel's own category.
+  // droplets never get a what-if HI — the formula is calibrated for solid-surface spread (see note)
   const matches = matchRuns();
   const run = matches[0]?.r;
-  const parts = run ? hiParts(run, state.o2) : null;
-  drawGauge(parts);
+  const parts = run && !isDroplet ? hiParts(run, state.o2) : null;
+  drawGauge(parts, isDroplet);
   renderMatched(matches, parts);
+
+  // formula area: droplets don't spread over surfaces — explain the two-stage regime instead
+  $("formula-note").hidden = !isDroplet;
+  if (isDroplet) $("formula-note").textContent =
+    "LIQUID DROPLET MODE — an isolated liquid droplet does not spread over a solid surface. " +
+    "It burns as a two-stage flame: the hot visible flame radiatively quenches, then a low-temperature " +
+    "COOL FLAME (FLEX) can persist below the normal limiting oxygen index — invisible to the eye, " +
+    "detectable only by heat feedback. Severity/Extinguish bars are defined for solid-surface spread only.";
+
+  // HUD telemetry — 4 corners: tag (TL), split button (TR), physics feed (BL), split banner (BR)
+  const g = state.gravity;
+  const shape = isDroplet ? (cool ? "SPHERICAL COOL FLAME" : "SPHERICAL DIFFUSION")
+    : g <= 0.05 ? (state.flow > 20 ? "SPHERICAL · FLOW-DRIFTED" : "SPHERICAL DIFFUSION")
+    : state.flow > 20 ? "FLOW-STRETCHED PLUME" : "BUOYANT TEARDROP";
+  const bl = state.flow > 0 ? "THINNED — FORCED CONVECTION"
+    : g <= 0.05 ? "STAGNANT FILM — PURE DIFFUSION" : "BUOYANT SHEAR LAYER";
+  const rl = cool ? "QUENCH → COOL STAGE ACTIVE"
+    : g <= 0.05 ? "ELEVATED — EXTINCTION RISK" : "VENTED — STABLE";
+  $("hud-left").innerHTML =
+    `<b>FLAME SHAPE</b>${shape}<br><b>BOUNDARY LAYER</b>${bl}<br><b>RADIATIVE LOSS</b>${rl}` +
+    `<br><b>CHAMBER AIR</b>O2 ${state.o2.toFixed(1)}% · ${state.flow} cm/s · ${state.press.toFixed(2)} atm`;
+  $("hud-right").hidden = !state.split;
+  if (state.split) $("hud-right").innerHTML =
+    "◤ SPLIT COMPARISON ACTIVE — SAME SAMPLE · SAME ATMOSPHERE<br>1g BUOYANT&nbsp;&nbsp;VS&nbsp;&nbsp;0g DIFFUSION — BUOYANCY IS THE ONLY VARIABLE ◢";
 
   const key = matches.map(m => m.r.id).join() + "|" + state.o2;
   if (key !== lastMatchKey) { lastMatchKey = key; if ($("qa-out").dataset.q) runQA($("qa-out").dataset.q); }
 }
-function drawGauge(p) {
+function drawGauge(p, isDroplet) {
   if (!p) {
-    $("hi-num").textContent = "N/A";
+    // droplet runs are never HI-scored — show the FLEX regime badge, not a dead N/A
+    const cool = state.o2 < 30;
+    $("cool-badge").hidden = !isDroplet;
+    $("cool-badge").classList.toggle("hot", isDroplet && !cool);
+    $("cool-badge").firstChild.textContent = isDroplet && !cool ? "HOT-FLAME" : "COOL-FLAME";
+    $("hi-num").textContent = isDroplet ? "" : "N/A";
+    $("hi-label").textContent = isDroplet ? (cool ? "TWO-STAGE EXTINCTION" : "DROPLET DIFFUSION BURN") : "FLAME HAZARD INDEX";
     $("gauge-arc").style.strokeDashoffset = 314;
     ["S", "O", "E", "C"].forEach(k => { $("fb-" + k).style.width = "0"; $("fbv-" + k).textContent = "—"; });
     return;
   }
+  $("cool-badge").hidden = true;
+  $("hi-label").textContent = "FLAME HAZARD INDEX";
   $("hi-num").textContent = p.hi.toFixed(1);
   const arc = $("gauge-arc");
   arc.style.strokeDashoffset = 314 * (1 - p.hi / 100);
@@ -178,7 +220,7 @@ function renderMatched(matches, parts) {
       <div class="m-sub">${esc(r.fuel)} · ${esc(r.outcome)} · ${r.o2_conc_pct ?? "—"}% O2${r.jev_verified ? " · VERIFIED" : ""}</div>
       <button class="replay">REPLAY RUN CONDITIONS</button>
     </div>`;
-  }).join("") : `<p class="explainer">No solid-fuel run matches this material.</p>`;
+  }).join("") : `<p class="explainer">No ${state.fuel === "heptane" ? "droplet/gas" : "solid-fuel"} run matches this material.</p>`;
   document.querySelectorAll(".match-card").forEach(c => {
     c.onclick = (e) => {
       if (e.target.classList.contains("replay")) return replayRun(c.dataset.id);
@@ -231,12 +273,16 @@ addEventListener("resize", resize); resize();
 let particles = Array.from({ length: 60 }, () => ({ x: Math.random(), y: Math.random(), p: Math.random() * 6 }));
 
 /* one combustion chamber inside rect (x0..x0+w); g is forced per call so
-   SPLIT mode can burn the same fuel in the same atmosphere at 1g and 0g */
+   SPLIT mode can burn the same fuel in the same atmosphere at 1g and 0g.
+   All geometry is scaled by K = 3.5× so the flame fills the chamber. */
+const K = 3.5 * devicePixelRatio;
+
 function drawChamber(x0, w, g, t) {
   const H = cv.height;
   const cxp = x0 + w * 0.5, cyp = H * 0.62; // sample anchor
   const fuel = FUELS[state.fuel];
   const isDroplet = state.fuel === "heptane";
+  const cool = isDroplet && state.o2 < 30;
 
   // airflow particles (render only; advection happens once per frame in tick)
   cx.fillStyle = "rgba(63,208,216,.45)";
@@ -247,41 +293,92 @@ function drawChamber(x0, w, g, t) {
     cx.fill();
   }
 
-  // sample
-  cx.fillStyle = "#26344a";
+  // airflow vector arrows when the fan is on
+  if (state.flow > 0) {
+    cx.strokeStyle = cx.fillStyle = `rgba(63,208,216,${0.25 + 0.55 * (state.flow / 50)})`;
+    cx.lineWidth = 1.5 * devicePixelRatio;
+    const len = (14 + state.flow * 0.8) * devicePixelRatio, yA = H * 0.30;
+    for (let i = 0; i < 4; i++) {
+      const ax = x0 + w * (0.12 + i * 0.25);
+      cx.beginPath();
+      cx.moveTo(ax, yA); cx.lineTo(ax + len, yA);
+      cx.moveTo(ax + len, yA); cx.lineTo(ax + len - 6 * devicePixelRatio, yA - 5 * devicePixelRatio);
+      cx.moveTo(ax + len, yA); cx.lineTo(ax + len - 6 * devicePixelRatio, yA + 5 * devicePixelRatio);
+      cx.stroke();
+    }
+  }
+
+  // fuel sample geometry — actual NASA sample at 3.5x
   if (isDroplet) {
-    cx.beginPath(); cx.arc(cxp, cyp, 9 * devicePixelRatio, 0, 7); cx.fill();
+    // tethered droplet between two opposed hot-wire igniter needles (FLEX MDCA / CIR)
+    const r = 9 * K;
+    cx.strokeStyle = "rgba(109,125,146,.8)"; cx.lineWidth = 1.5 * devicePixelRatio;
+    cx.beginPath();
+    cx.moveTo(x0 + w * 0.06, cyp); cx.lineTo(cxp - r - 14 * K, cyp);   // left igniter needle
+    cx.moveTo(x0 + w * 0.94, cyp); cx.lineTo(cxp + r + 14 * K, cyp);   // right igniter needle
+    cx.moveTo(cxp, cyp - 42 * K); cx.lineTo(cxp, cyp + 26 * K);        // SiC tether fiber
+    cx.stroke();
+    cx.fillStyle = "#2a3950";
+    cx.beginPath(); cx.arc(cxp, cyp, r, 0, 7); cx.fill();
+    cx.fillStyle = "rgba(180,220,255,.25)";                            // droplet specular
+    cx.beginPath(); cx.arc(cxp - r * 0.3, cyp - r * 0.3, r * 0.35, 0, 7); cx.fill();
   } else if (fuel && fuel.shape.includes("rod")) {
-    cx.fillRect(cxp - 6 * devicePixelRatio, cyp, 12 * devicePixelRatio, H - cyp - 40 * devicePixelRatio);
+    cx.fillStyle = "#26344a";
+    cx.fillRect(cxp - 6 * K, cyp, 12 * K, H - cyp - 12 * devicePixelRatio);
+    cx.fillStyle = "rgba(255,255,255,.06)";
+    cx.fillRect(cxp - 6 * K, cyp, 4 * K, H - cyp - 12 * devicePixelRatio);
+  } else if (fuel && fuel.shape.includes("coating")) {
+    // wire insulation bundle: insulation over conductor, horizontal
+    const wl = Math.min(70 * K, w * 0.35);
+    cx.fillStyle = "#26344a";
+    if (cx.roundRect) { cx.beginPath(); cx.roundRect(cxp - wl, cyp, 2 * wl, 8 * K, 4 * K); cx.fill(); }
+    else cx.fillRect(cxp - wl, cyp, 2 * wl, 8 * K);
+    cx.fillStyle = "#8a6a3a";                                          // exposed conductor ends
+    cx.fillRect(cxp - wl - 12 * devicePixelRatio, cyp + 2.5 * K, 12 * devicePixelRatio, 3 * K);
+    cx.fillRect(cxp + wl, cyp + 2.5 * K, 12 * devicePixelRatio, 3 * K);
+  } else if (fuel && fuel.shape.includes("fabric")) {
+    // SIBAL fabric strip (75% cotton / 25% fiberglass) with weave seams
+    const sw = Math.min(60 * K, w * 0.7);
+    cx.fillStyle = "#3a3630";
+    cx.fillRect(cxp - sw / 2, cyp, sw, 7 * K);
+    cx.strokeStyle = "rgba(255,169,110,.22)"; cx.lineWidth = 1;
+    for (let i = cxp - sw / 2 + 8 * K; i < cxp + sw / 2 - 2 * K; i += 12 * K) {
+      cx.beginPath(); cx.moveTo(i, cyp); cx.lineTo(i, cyp + 7 * K); cx.stroke();
+    }
   } else {
-    cx.fillRect(cxp - 60 * devicePixelRatio, cyp, 120 * devicePixelRatio, 5 * devicePixelRatio);
-    cx.fillStyle = "#1a2433";
-    cx.fillRect(cxp - 60 * devicePixelRatio, cyp, 120 * devicePixelRatio, 22 * devicePixelRatio);
+    // 41 cm PMMA flat sheet on a dark support
+    const sw = Math.min(60 * K, w * 0.72);
+    cx.fillStyle = "rgba(15,20,28,.9)";
+    cx.fillRect(cxp - sw / 2, cyp + 5 * K, sw, 7 * K);
+    cx.fillStyle = "#2e4256";
+    cx.fillRect(cxp - sw / 2, cyp, sw, 5 * K);
+    cx.fillStyle = "rgba(255,255,255,.05)";
+    cx.fillRect(cxp - sw / 2, cyp, sw, 1.5 * K);
   }
 
   // flame
   const flick = 1 + 0.08 * Math.sin(t / 90) + 0.05 * Math.sin(t / 47 + 2);
-  const cool = isDroplet && state.o2 < 30; // FLEX cool-flame regime at low O2
   if (isDroplet) {
     if (cool) {
       const pulse = 0.5 + 0.5 * Math.sin(t / 400);
       cx.strokeStyle = `rgba(140,120,255,${0.35 + 0.3 * pulse})`;
-      cx.lineWidth = 2 * devicePixelRatio;
-      cx.beginPath(); cx.arc(cxp, cyp, (16 + 10 * pulse) * devicePixelRatio, 0, 7); cx.stroke();
+      cx.lineWidth = 2.5 * devicePixelRatio;
+      cx.beginPath(); cx.arc(cxp, cyp, (16 + 10 * pulse) * K, 0, 7); cx.stroke();
       cx.fillStyle = `rgba(120,110,255,${0.06 + 0.05 * pulse})`;
-      cx.beginPath(); cx.arc(cxp, cyp, (16 + 10 * pulse) * devicePixelRatio, 0, 7); cx.fill();
+      cx.beginPath(); cx.arc(cxp, cyp, (16 + 10 * pulse) * K, 0, 7); cx.fill();
     } else {
-      const rg = 14 + 4 * flick;
-      const gr = cx.createRadialGradient(cxp, cyp, 2, cxp, cyp, rg * devicePixelRatio);
+      const rg = (14 + 4 * flick) * K;
+      const gr = cx.createRadialGradient(cxp, cyp, 2, cxp, cyp, rg);
       gr.addColorStop(0, "rgba(255,235,170,.95)"); gr.addColorStop(0.5, "rgba(255,150,60,.8)");
       gr.addColorStop(1, "rgba(255,90,20,0)");
-      cx.fillStyle = gr; cx.beginPath(); cx.arc(cxp, cyp, rg * devicePixelRatio, 0, 7); cx.fill();
+      cx.fillStyle = gr; cx.beginPath(); cx.arc(cxp, cyp, rg, 0, 7); cx.fill();
     }
   } else {
     // teardrop (1g) morphing to sphere (0g); lean downstream with airflow
-    const lean = (state.flow / 50) * 60 * devicePixelRatio * (0.4 + 0.6 * (1 - g));
-    const hgt = (30 + 70 * g) * flick * devicePixelRatio;   // buoyant stretch
-    const rad = (26 + 10 * (1 - g)) * devicePixelRatio;
+    const lean = (state.flow / 50) * 60 * K * (0.4 + 0.6 * (1 - g));
+    let hgt = (30 + 70 * g) * flick * K;   // buoyant stretch
+    hgt = Math.min(hgt, cyp - 20 * devicePixelRatio);
+    const rad = (26 + 10 * (1 - g)) * K;
     const blue = clamp(1 - g * 1.2);
     const gr = cx.createRadialGradient(cxp + lean, cyp - rad * 0.2, 2, cxp + lean * 0.6, cyp - hgt * 0.35, Math.max(hgt, rad));
     gr.addColorStop(0, `rgba(${255 - 140 * blue},${235 - 60 * blue},${180 + 60 * blue},${0.95 - 0.2 * (1 - g)})`);
@@ -297,6 +394,23 @@ function drawChamber(x0, w, g, t) {
       cx.arc(cxp + lean * 0.5, cyp - rad * 0.4, rad * (1 + 0.04 * Math.sin(t / 500)), 0, 7);
     }
     cx.fill();
+
+    // wake: buoyant soot wisps rising off the flame tip (1g), or a 0g standoff halo
+    cx.strokeStyle = g > 0.05 ? "rgba(160,170,185,.15)" : "rgba(120,170,255,.12)";
+    cx.lineWidth = 4 * devicePixelRatio;
+    if (g > 0.05) {
+      for (let i = 0; i < 3; i++) {
+        const wy = cyp - hgt - (i + 0.5) * 26 * K;
+        const wob = Math.sin(t / 700 + i * 2.1) * 12 * K;
+        cx.beginPath();
+        cx.ellipse(cxp + lean * 0.5 + wob, wy, 15 * K, 8 * K, 0, 0, 7);
+        cx.stroke();
+      }
+    } else {
+      cx.beginPath();
+      cx.arc(cxp + lean * 0.5, cyp - rad * 0.4, rad * 1.35 + 3 * Math.sin(t / 500), 0, 7);
+      cx.stroke();
+    }
   }
 }
 
@@ -315,8 +429,8 @@ function tick(t) {
     if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
   }
 
-  cx.fillStyle = "rgba(109,125,146,.9)";
-  cx.font = `${11 * devicePixelRatio}px JetBrains Mono, monospace`;
+  cx.fillStyle = "rgba(255,169,110,.95)";
+  cx.font = `${12 * devicePixelRatio}px JetBrains Mono, monospace`;
 
   if (state.split) {
     // SPLIT: identical fuel + atmosphere, 1g vs 0g side by side — the core physics, visible at a glance
@@ -331,16 +445,8 @@ function tick(t) {
     cx.font = `${12 * devicePixelRatio}px JetBrains Mono, monospace`;
     cx.fillText("1g EARTH — BUOYANT FLAME", 14 * devicePixelRatio, 46 * devicePixelRatio);
     cx.fillText("0g ORBIT — DIFFUSION FLAME", half + 14 * devicePixelRatio, 46 * devicePixelRatio);
-    cx.fillStyle = "rgba(109,125,146,.9)";
-    cx.font = `${11 * devicePixelRatio}px JetBrains Mono, monospace`;
-    cx.textAlign = "center";
-    cx.fillText(`SAME SAMPLE · O2 ${state.o2.toFixed(1)}% · FLOW ${state.flow} cm/s · ${state.press.toFixed(2)} atm`, half, H - 16 * devicePixelRatio);
-    cx.textAlign = "left";
   } else {
     drawChamber(0, W, g, t);
-    const cool = state.fuel === "heptane" && state.o2 < 30;
-    if (cool) cx.fillText("INVISIBLE COOL FLAME — FLEX REGIME (pulse visible via laser heat feedback)", 14 * devicePixelRatio, H - 16 * devicePixelRatio);
-    else cx.fillText(`O2 ${state.o2.toFixed(1)}%  ·  FLOW ${state.flow} cm/s  ·  ${state.press.toFixed(2)} atm  ·  ${g === 0 ? "0g" : g + "g"}`, 14 * devicePixelRatio, H - 16 * devicePixelRatio);
   }
 
   requestAnimationFrame(tick);

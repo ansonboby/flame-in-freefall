@@ -756,5 +756,63 @@
    "lunar_base": 30.9,
    "rover": 30.9
   }
+ },
+ {
+  "objective": "Fly the Dust and Aerosol Measurement Feasibility Test (DAFT) precursor on the ISS: verify that a modified P-Trak condensation particle counter \u2014 a key component of the forthcoming SAME experiment \u2014 performs in microgravity, and provide the first measurement of background smoke particulate levels aboard the station.",
+  "fuel": "spacecraft cabin background aerosol (no combustion test)",
+  "fuel_shape": "cabin aerosol",
+  "fuel_size": null,
+  "o2_conc_pct": null,
+  "pressure_atm": null,
+  "airflow_cm_s": null,
+  "gravity_g": 0,
+  "environment": "station",
+  "pillar": "detection",
+  "fuel_category": "other",
+  "outcome": "no_burn",
+  "sensors": [
+   "modified P-Trak condensation particle counter"
+  ],
+  "variables_vs_other_runs": "SAME-lens record 06_same-20070031686 shares NTRS citation 20070031686; DAFT lens extracts the precursor background-aerosol finding only.",
+  "key_finding": "DAFT provided the first measurement of background smoke particulate levels on the ISS; the cabin proved a very clean environment with particulate levels substantially below the space shuttle and typical ground-based environments.",
+  "evidence_quote": "A precursor experiment (DAFT: Dust Aerosol measurement Feasibility Test) flew recently on the ISS and provided the first measurement of the background smoke particulate levels on the ISS.",
+  "id": "09_daft-20070031686",
+  "investigation": "DAFT",
+  "url": "https://ntrs.nasa.gov/citations/20070031686",
+  "extracted_by": "glm-5.3-flash-free (manual lens re-extraction)",
+  "_source_text": "DAFT \u2014 investigation reference corpus.\nComposed of VERBATIM abstracts from NASA NTRS citations below.\n\n[NTRS 20070031686] Particle and Smoke Detection on ISS for Next Generation Smoke Detectors\n\nRapid fire detection requires the ability to differentiate fire signatures from background conditions and nuisance sources. Proper design of a fire detector requires detailed knowledge of all of these signal sources so that a discriminating detector can be designed. Owing to the absence of microgravity smoke data, all current spacecraft smoke detectors were designed based upon normal-g conditions. The removal of buoyancy reduces the velocities in the high temperature zones in flames, increasing the residence time of smoke particles and consequently allowing longer growth time for the particles. Recent space shuttle experiments confirmed that, in some cases, increased particles sizes are seen in low-gravity and that the relative performance of the ISS (International Space Station) and space-shuttle smoke-detectors changes in low-gravity; however, sufficient particle size information to design new detectors was not obtained. To address this issue, the SAME (Smoke Aerosol Measurement Experiment) experiment is manifested to fly on the ISS in 2007. The SAME experiment will make measurements of the particle size distribution of the smoke particulate from several typical spacecraft materials providing quantitative design data for spacecraft smoke detectors. A precursor experiment (DAFT: Dust Aerosol measurement Feasibility Test) flew recently on the ISS and provided the first measurement of the background smoke particulate levels on the ISS. These background levels are critical to the design of future smoke detectors. The ISS cabin was found to be a very clean environment with particulate levels substantially below the space shuttle and typical ground-based environments.\n",
+  "jev_verified": true,
+  "jev_evidence_score": 10,
+  "jev_relevance_p": 0.92,
+  "jev_quote_p": 0.99
+ },
+ {
+  "objective": "Review and test low-cost commercial off-the-shelf aerosol sensors for real-time spacecraft particulate monitoring, measuring Arizona Road Dust and lunar dust simulant concentrations in a laboratory chamber (DAFT-lineage particulate instrumentation).",
+  "fuel": "Arizona Road Dust and lunar dust simulant (aerosol, no flame)",
+  "fuel_shape": "dust aerosol",
+  "fuel_size": null,
+  "o2_conc_pct": null,
+  "pressure_atm": null,
+  "airflow_cm_s": null,
+  "gravity_g": null,
+  "environment": "station",
+  "pillar": "detection",
+  "fuel_category": "other",
+  "outcome": "no_burn",
+  "sensors": [
+   "low-cost COTS light-scattering aerosol sensors"
+  ],
+  "variables_vs_other_runs": null,
+  "key_finding": "Low-cost COTS light-scattering sensors were evaluated for spacecraft particulate monitoring; temperature, humidity, low pressure, radiation and gravity all affect measurement accuracy, and real-time concentrations of Arizona Road Dust and lunar dust simulant were demonstrated in a laboratory chamber.",
+  "evidence_quote": "experiments are performed to measure real-time concentrations of Arizona Road Dust (a terrestrial reference test dust) and lunar dust simulant in a laboratory chamber.",
+  "id": "10_daft_2-20220004425",
+  "investigation": "DAFT-2",
+  "url": "https://ntrs.nasa.gov/citations/20220004425",
+  "extracted_by": "glm-5.3-flash-free (manual lens re-extraction)",
+  "_source_text": "DAFT / DAFT-2 \u2014 Dust and Aerosol Measurement Feasibility Test.\nNOTE: DAFT-2-specific abstracts are not published on NTRS; this file carries verbatim\nabstracts of the official NTRS particulate-measurement studies that share the DAFT\ninstrumentation lineage (SAME smoke detector reused for dust \u2014 challenge text). Verify\nagainst the PSI page for DAFT/DAFT-2 before scoring. Rockets/propellants out of scope.\n\n[NTRS 20220004425] Feasibility of using Low-Cost COTS Sensors for Particulate Monitoring in Space Missions\nReal-time measurement of particles suspended in the spacecraft cabin is of great importance to verify that maximum allowable dust concentrations are not exceeded. This is primarily to protect astronaut health, but also has implications for dust-sensitive equipment. Recently, there is growing interest in low-cost commercial off-the-shelf (COTS) particle sensors by air quality researchers for their ability to map concentrations of airborne particulate matter in various terrestrial settings. In addition to low cost (< $2,000), the compact size and minimal weight of these sensors make them a potential choice for space missions. The detection mechanism for these aerosol sensors is typically measurement of light scattered by particles as they flow through a sensing volume. The amount of scattered light for detection depends on the particle size, shape, density, and refractive index of the particle material. Ideally, particle instruments should be calibrated with reference instruments for each different type of aerosol measurement. In this study we review multiple parameters that may impact the performance of state-of-the-art low-cost aerosol sensors. Environmental factors such as temperature, relative humidity, low ambient pressure, radiation and charge environment, partial-gravity and microgravity can affect the accuracy of particle measurements. Characteristics of the dust aerosols including particle size distribution, aerosol composition, refractive index, morphology and concentration levels also affect the measurement accuracy. Finally, we look at these parameters and issues with respect to an example COTS low-cost aerosol sensor. Instrument performance specifications are evaluated, and experiments are performed to measure real-time concentrations of Arizona Road Dust (a terrestrial reference test dust) and lunar dust simulant in a laboratory chamber. Overall, this study provides insight for evaluating spacecraft particulate monitoring technologies and raises questions to be answered before incorporating low-cost COTS sensors in future space missions to dusty destinations.\n\n",
+  "jev_verified": false,
+  "jev_evidence_score": 10,
+  "jev_relevance_p": 0.34,
+  "jev_quote_p": 0.99
  }
 ]

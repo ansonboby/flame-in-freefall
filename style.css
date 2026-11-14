@@ -46,27 +46,27 @@ main { height: calc(100vh - 52px); }
 }
 @media (max-width: 1100px) { #views button { padding: 8px 6px; font-size: 9px; } .topstats { display: none; } }
 .workbench > *, .matrix-wrap, .impact-wrap { overflow-y: auto; }
-.panel { padding: 14px; border-right: 1px solid var(--line); background: var(--panel); }
+.panel { padding: 12px; border-right: 1px solid var(--line); background: var(--panel); }
 .col-right { border-right: 0; border-left: 1px solid var(--line); }
-.panel h2 { font-size: 10px; letter-spacing: 2px; color: var(--dim); margin: 16px 0 8px;
+.panel h2 { font-size: 10px; letter-spacing: 2px; color: var(--dim); margin: 10px 0 6px;
   border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 .panel h2:first-child { margin-top: 0; }
-.explainer { color: var(--dim); font-size: 11px; margin: 8px 0; }
+.explainer { color: var(--dim); font-size: 11px; margin: 5px 0; }
 
 /* ---------- left controls ---------- */
 .env-grid { display: grid; gap: 4px; }
 .env-grid button { background: var(--panel2); border: 1px solid var(--line); color: var(--text);
-  text-align: left; font: 11px var(--mono); padding: 8px 10px; cursor: pointer; }
+  text-align: left; font: 11px var(--mono); padding: 5px 9px; cursor: pointer; }
 .env-grid button small { display: block; color: var(--dim); font-size: 10px; }
 .env-grid button.active { border-color: var(--cyan); background: #0d1b22; }
-.slider-row { margin: 12px 0; }
+.slider-row { margin: 7px 0; }
 .slider-row label { display: flex; justify-content: space-between; font-size: 10px;
-  letter-spacing: 1px; color: var(--dim); margin-bottom: 4px; }
+  letter-spacing: 1px; color: var(--dim); margin-bottom: 3px; }
 .slider-row output { color: var(--cyan); }
 input[type=range] { width: 100%; accent-color: var(--orange); background: var(--panel2); height: 4px; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .seg button { background: var(--panel2); border: 1px solid var(--line); color: var(--dim);
-  font: 10px var(--mono); padding: 7px 4px; cursor: pointer; letter-spacing: .5px; }
+  font: 10px var(--mono); padding: 6px 4px; cursor: pointer; letter-spacing: .5px; }
 .seg button.active { color: var(--text); border-color: var(--orange); }
 
 /* ---------- center ---------- */
@@ -79,7 +79,19 @@ input[type=range] { width: 100%; accent-color: var(--orange); background: var(--
   color: var(--dim); background: rgba(7,9,13,.8); border: 1px solid var(--line); padding: 5px 10px;
   cursor: pointer; }
 #split-btn:hover { color: var(--text); border-color: var(--dim); }
-#split-btn.on { color: var(--orange); border-color: var(--orange); }
+#split-btn.on { color: var(--orange); border-color: var(--orange); animation: splitglow 1.2s ease-in-out infinite alternate; }
+@keyframes splitglow {
+  from { box-shadow: 0 0 4px rgba(255,122,47,.25); }
+  to   { box-shadow: 0 0 16px rgba(255,122,47,.85); }
+}
+/* HUD telemetry overlays — 4 corners of the chamber canvas */
+.hud { position: absolute; font-size: 9px; letter-spacing: 1px; line-height: 1.8;
+  color: var(--cyan); background: rgba(7,9,13,.78); border: 1px solid var(--line);
+  padding: 6px 9px; pointer-events: none; }
+.hud b { color: var(--dim); font-weight: 400; margin-right: 5px; }
+.hud-bl { left: 12px; bottom: 10px; }
+.hud-br { right: 10px; bottom: 10px; text-align: right; color: var(--orange);
+  border-color: var(--orange); font-size: 10px; animation: splitglow 1.2s ease-in-out infinite alternate; }
 .gauge-zone { display: flex; gap: 18px; align-items: center; border-top: 1px solid var(--line);
   background: var(--panel); padding: 14px 18px; }
 .gauge { position: relative; width: 128px; height: 128px; flex: none; }
@@ -89,7 +101,16 @@ input[type=range] { width: 100%; accent-color: var(--orange); background: var(--
   stroke-dasharray: 314; stroke-dashoffset: 314; transition: stroke-dashoffset .3s, stroke .3s; }
 .gauge-num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .gauge-num b { font-size: 30px; color: var(--text); }
-.gauge-num i { font-style: normal; font-size: 8px; color: var(--dim); letter-spacing: 1px; }
+.gauge-num i { font-style: normal; font-size: 8px; color: var(--dim); letter-spacing: 1px; padding: 0 10px; }
+.cool-badge { color: var(--cyan); font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  text-align: center; animation: coolpulse 1.5s ease-in-out infinite; }
+.cool-badge span { display: block; font-size: 8px; font-weight: 400; color: var(--dim);
+  letter-spacing: 2px; margin-top: 3px; }
+.cool-badge.hot { color: var(--orange); }
+@keyframes coolpulse {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; text-shadow: 0 0 12px rgba(63,208,216,.9); }
+}
 .formula { flex: 1; min-width: 0; }
 .formula h3 { font-size: 11px; color: var(--orange); letter-spacing: .5px; margin-bottom: 8px; }
 .fb-row { display: grid; grid-template-columns: 150px 1fr 40px; gap: 8px; align-items: center;
