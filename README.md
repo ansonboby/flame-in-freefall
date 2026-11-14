@@ -28,10 +28,14 @@ my mission's atmosphere?**
 
 ## Trust model (Creativity)
 
-One AI extracts, an **independent second model verifies**: `extract_records.py` (Llama 3.1 8B via
-Ollama) turns each PSI investigation page into a structured record; `verify_records.py` (Jev
-decision model) re-checks every claim against the source and scores evidence quality
-(0–10) with match probabilities. **80% of records pass dual verification**; the rest are flagged
+One AI extracts, an **independent ladder verifies**: `extract_records.py` turns each PSI
+investigation page into a structured record (the extracting model is logged per record and
+shown in the app's inspector: Google gemini-2.5-flash, OpenAI gpt-5.4-mini, GLM
+glm-5.3-flash-free for manual lens re-extraction); `verify_records.py` re-checks every claim
+against the source through a fallback ladder of independent decision models
+(jev-1.13-free → jev-1.13 → gemini-decision-1 → gpt-6-luna-decision → Llama self-check →
+human review) and scores evidence quality (0–10) with match probabilities. **80% of records
+pass dual verification**; the rest are flagged
 `FLAGGED` in plain sight, in red, in the matrix. What the sources don't state appears as a
 DATA GAP, not a guess.
 
@@ -66,14 +70,17 @@ python3 -m http.server 8907   # in public/  (or any static server on the repo ro
 The data pipeline (optional; output is already committed):
 
 ```bash
-ollama pull llama3.1:8b
-MODEL=llama3.1:8b python extract_records.py
-python verify_records.py
+python extract_records.py   # BACKEND=gemini|openai|openrouter|nvidia|ollama (see script header)
+python verify_records.py    # OPENCODE_API_KEY enables the decision-model ladder
 python build_site_data.py
 ```
 
 ## Disclosure (SI)
 
-Llama 3.1 8B (Ollama) — record extraction + Q&A search assist. Jev 1.13 — independent record
-verification. Coding assistant — used for implementation and bug-hunting. All demo visuals are
-screen recordings of the running app; no AI-generated imagery anywhere in the submission.
+**Extraction** (model logged per record, shown in the app's evidence inspector): Google
+gemini-2.5-flash, OpenAI gpt-5.4-mini, GLM glm-5.3-flash-free (manual lens re-extraction).
+**Verification:** independent decision-model ladder jev-1.13-free → jev-1.13 →
+gemini-decision-1 → gpt-6-luna-decision, falling back to a Llama self-check (quote/number
+re-verification via Ollama) then human review (`needs_review.json`). Coding assistant — used
+for implementation and bug-hunting. All demo visuals are screen recordings of the running
+app; no AI-generated imagery anywhere in the submission.

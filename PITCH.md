@@ -37,14 +37,20 @@ crew-environment presets, fuel/material picker, live chamber visualization, Flam
 Index dial + exposed formula; Test Matrix & Compare with environment×outcome matrix and
 top-hazard cards; Mission Impact & Spinoffs timeline; per-record evidence inspector with
 verbatim quote, NTRS source, dual-model verdict; CSV export of the full dataset),
-how it works (pipeline: `corpus/` PSI page text → `extract_records.py` (Llama 3.1 8B via
-Ollama) → `verify_records.py` (Jev decision model) → `build_site_data.py` → static cockpit),
+how it works (pipeline: `corpus/` PSI page text → `extract_records.py` (multi-provider
+extraction: gemini-2.5-flash, gpt-5.4-mini, GLM manual re-extraction — model logged per
+record) → `verify_records.py` (independent decision-model ladder: jev-1.13-free →
+jev-1.13 → gemini-decision-1 → gpt-6-luna-decision → Llama self-check → human review)
+→ `build_site_data.py` → static cockpit),
 benefits (mission planners, researchers — the challenge's named audience), tools
-(Python pipeline: Llama 3.1 8B + Ollama + Jev decision model; frontend: vanilla JS +
+(Python pipeline calling model APIs + Ollama fallback; frontend: vanilla JS +
 Canvas, deployed on Vercel; data: PSI/NTRS).
 
-**Use of SI (disclosure):** list Llama 3.1 8B (extraction + Q&A), Jev 1.13 (record
-verification), any coding-assistant use. Code/data acknowledgment in metadata.
+**Use of SI (disclosure):** extraction by gemini-2.5-flash and gpt-5.4-mini (per-record
+model shown in the app's inspector), GLM glm-5.3-flash-free for manual lens re-extraction;
+verification by independent decision models (jev-1.13-free → jev-1.13 → gemini-decision-1
+→ gpt-6-luna-decision → Llama self-check → human review); coding assistant used for
+implementation. Code/data acknowledgment in metadata.
 Demo uses screen recordings only — no SI-generated imagery.
 
 **NASA data:** *NASA Physical Sciences Informatics (PSI) — Combustion Science repository*;
@@ -52,8 +58,8 @@ Demo uses screen recordings only — no SI-generated imagery.
 Investigations used: BASS, BASS-II, Saffire-I/II/III, SAME, SAME-R, FLEX, DAFT, DAFT-2.
 (Required field for Global Award eligibility — be specific.)
 
-**References:** every source in `sources.csv` + libraries (Python: Ollama client for the
-extraction/verification pipeline; frontend: vanilla JS + Canvas + SVG, no framework;
+**References:** every source in `sources.csv` + libraries (Python pipeline: model-provider
+APIs + Ollama fallback; frontend: vanilla JS + Canvas + SVG, no framework;
 hosting: Vercel; fonts: JetBrains Mono stack with system-mono fallback).
 
 **Demo video:** screen layer pre-recorded and beat-timed to this script:
