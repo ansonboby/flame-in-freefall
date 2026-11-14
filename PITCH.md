@@ -25,7 +25,7 @@ Screen-record the live app. No AI-generated visuals (avoids SI watermark rules).
 **High-Level Summary:**
 > An interactive, SI-powered dashboard that summarizes, ranks, and interprets NASA's
 > microgravity combustion research to deliver fire-safety insights for human space
-> exploration. A local LLM turns each PSI Combustion Science investigation into a
+> exploration. An AI pipeline turns each PSI Combustion Science investigation into a
 > structured record (fuel, O₂, pressure, airflow, gravity, outcome, evidence quote);
 > a transparent Flame Hazard Index (0–100) ranks materials and conditions for spacecraft,
 > space stations, lunar bases, and pressurized rovers; a "Will it burn?" checker answers
@@ -62,9 +62,10 @@ Investigations used: BASS, BASS-II, Saffire-I/II/III, SAME, SAME-R, FLEX, DAFT, 
 APIs + Ollama fallback; frontend: vanilla JS + Canvas + SVG, no framework;
 hosting: Vercel; fonts: JetBrains Mono stack with system-mono fallback).
 
-**Demo video:** screen layer pre-recorded and beat-timed to this script:
-`pitch/pyro-0g-30s-demo.mp4` (≤30s, live app only, no SI-generated visuals).
-Add the narration read-aloud over it, trim to ≤30s, upload to the Project page.
+**Demo video:** two beat-timed screen layers (≤30s, live app only, no SI-generated visuals):
+- `pitch/pyro-0g-30s-demo-captioned.mp4` — **captioned, upload-ready as-is** (no audio needed)
+- `pitch/pyro-0g-30s-demo.mp4` — clean layer; add the narration read-aloud over it, trim to ≤30s
+Upload to the Project page.
 
 ## 3. Pre-submit checklist
 
