@@ -6,7 +6,7 @@
 <title>PYRO-0G // NASA PSI Combustion Telemetry</title>
 <meta name="description" content="Dual-model verified NASA microgravity combustion data: Gemini extraction + Jev verification, live Flame Hazard Index across ISS, lunar base and rover atmospheres.">
 <meta property="og:title" content="PYRO-0G — NASA PSI Combustion Telemetry">
-<meta property="og:description" content="41→23 hand-audited NASA fire experiments, dual-model verified, with a live Flame Hazard Index simulator.">
+<meta property="og:description" content="25 verified NASA fire-experiment runs from 23 NTRS citations, dual-model audited, with a live Flame Hazard Index simulator.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://pyro-0g.vercel.app/">
 <meta property="og:image" content="https://pyro-0g.vercel.app/og.png">
@@ -31,6 +31,7 @@
     <button data-view="matrix">TEST MATRIX &amp; COMPARE</button>
     <button data-view="impact">MISSION IMPACT &amp; SPINOFFS</button>
   </nav>
+  <button id="brief-btn" hidden>BRIEFING</button>
   <a id="csv-btn" href="data/flame.csv" download>EXPORT CSV</a>
 </header>
 
@@ -50,18 +51,18 @@
       <p class="explainer" id="fuel-spec"></p>
 
       <h2>TELEMETRY</h2>
-      <div class="slider-row"><label>OXYGEN <output id="o2-out">21.0 %</output></label>
+      <div class="slider-row"><label for="o2">OXYGEN <output id="o2-out">21.0 %</output></label>
         <input type="range" id="o2" min="15" max="40" step="0.5" value="21"></div>
-      <div class="slider-row"><label>AIRFLOW FAN <output id="flow-out">0 cm/s</output></label>
+      <div class="slider-row"><label for="flow">AIRFLOW FAN <output id="flow-out">0 cm/s</output></label>
         <input type="range" id="flow" min="0" max="50" step="1" value="0"></div>
-      <div class="slider-row"><label>PRESSURE <output id="press-out">1.00 atm</output></label>
+      <div class="slider-row"><label for="press">PRESSURE <output id="press-out">1.00 atm</output></label>
         <input type="range" id="press" min="0.3" max="1" step="0.01" value="1"></div>
-      <div class="slider-row"><label>GRAVITY</label>
-        <div class="seg" id="grav-seg">
-          <button data-g="1" class="active">1g EARTH</button>
-          <button data-g="0.38">0.38g MARS</button>
-          <button data-g="0.16">0.16g MOON</button>
-          <button data-g="0">0g MICRO-G</button>
+      <div class="slider-row"><label>GRAVITY<span id="grav-note" hidden> — SUSPENDED IN SPLIT</span></label>
+        <div class="seg" id="grav-seg" role="radiogroup" aria-label="Gravity">
+          <button data-g="1" class="active" aria-pressed="true">1g EARTH</button>
+          <button data-g="0.38" aria-pressed="false">0.38g MARS</button>
+          <button data-g="0.16" aria-pressed="false">0.16g MOON</button>
+          <button data-g="0" aria-pressed="false">0g MICRO-G</button>
         </div></div>
       <p class="explainer">Enriched O2 raises the oxygen index of every solid: flame spread that
       self-extinguishes at 21% can sustain at 34%. Lower pressure thins the boundary layer and
@@ -72,7 +73,7 @@
 
     <section class="panel col-center">
       <div class="canvas-wrap">
-        <canvas id="chamber"></canvas>
+        <canvas id="chamber" role="img" aria-label="Live combustion chamber; flame regime, atmosphere and hazard are shown in the chamber tag, HUD and Flame Hazard Index gauge"></canvas>
         <div class="chamber-tag" id="chamber-tag">COMBUSTION CHAMBER — 1g BUOYANT REGIME</div>
         <button id="split-btn" title="Burn the same sample in the same atmosphere at 1g and 0g, side by side">SPLIT 1g | 0g</button>
         <div class="hud hud-bl" id="hud-left"></div>
@@ -91,6 +92,7 @@
         </div>
         <div class="formula">
           <h3>HI = 100 × (0.35·S + 0.25·O + 0.20·E + 0.20·C)</h3>
+          <div id="hi-src" class="hi-src"></div>
           <div class="fb-row"><span>SEVERITY (S)</span><div class="fb-bar"><i id="fb-S"></i></div><b id="fbv-S">—</b></div>
           <div class="fb-row"><span>OXYGEN (O)</span><div class="fb-bar"><i id="fb-O"></i></div><b id="fbv-O">—</b></div>
           <div class="fb-row"><span>EXTINGUISH DIFF. (E)</span><div class="fb-bar"><i id="fb-E"></i></div><b id="fbv-E">—</b></div>

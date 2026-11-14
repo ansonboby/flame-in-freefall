@@ -8,6 +8,7 @@ const SEV = { spread: 1.0, smoldering: 0.5, extinguished: 0.0, no_burn: 0.0 };
 
 let RECORDS = [], META = {}, STORY = {};
 const state = { o2: 21, flow: 0, press: 1.0, gravity: 1, fuel: null, env: "station", split: false };
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const ENV_PRESETS = {
   iss:    { label: "ISS STATION",        sub: "21.0% O2 · 1.00 atm · 0g", o2: 21,   press: 1.00, g: 0,
@@ -62,6 +63,9 @@ function wireViews() {
     document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + b.dataset.view));
     // a canvas sized while display:none reads 0x0 — resize on every view switch
     if (b.dataset.view === "simulator") resize();
+    // arrive at the top: scroll position from the previous view is disorienting
+    window.scrollTo(0, 0);
+    document.querySelectorAll(".workbench > *, .matrix-wrap, .impact-wrap").forEach(el => el.scrollTop = 0);
   });
 }
 
@@ -78,8 +82,7 @@ function wireControls() {
     $("env-explainer").textContent = e.why;
     if (e.g != null) {  // crew environment implies its gravity — never leave the slider stale
       state.gravity = e.g;
-      const gb = document.querySelector(`#grav-seg button[data-g="${e.g}"]`);
-      if (gb) document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === gb));
+      setGrav(e.g);
     }
     setActive($("env-presets"), b);
     updateAll();
@@ -97,7 +100,7 @@ function wireControls() {
   }
   document.querySelectorAll("#grav-seg button").forEach(b => b.onclick = () => {
     state.gravity = parseFloat(b.dataset.g);
-    document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === b));
+    setGrav(state.gravity);
     updateAll();
   });
   $("split-btn").onclick = () => {
@@ -105,14 +108,23 @@ function wireControls() {
     $("split-btn").classList.toggle("on", state.split);
     updateAll();
   };
-  $("brief-go").onclick = () => $("briefing").remove();
-  document.addEventListener("keydown", e => e.key === "Enter" && $("briefing") && $("brief-go").click());
+  $("brief-go").onclick = () => { $("briefing").style.display = "none"; $("brief-btn").hidden = false; };
+  $("brief-btn").onclick = () => { $("briefing").style.display = ""; $("brief-btn").hidden = true; };
+  document.addEventListener("keydown", e =>
+    e.key === "Enter" && $("briefing") && $("briefing").style.display !== "none" && $("brief-go").click());
   // default selections
   $("env-presets").querySelector("[data-env=iss]").click();
   $("fuel-presets").querySelector("[data-fuel=pmma_sheet]").click();
 }
 function setActive(container, btn) {
   [...container.children].forEach(x => x.classList.toggle("active", x === btn));
+}
+function setGrav(g) {
+  document.querySelectorAll("#grav-seg button").forEach(b => {
+    const on = parseFloat(b.dataset.g) === g;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on);
+  });
 }
 
 /* ---------- HI scoring (mirrors flame_core.hazard_index) ---------- */
@@ -128,18 +140,37 @@ function hiParts(run, o2Live) {
 /* ---------- matching ---------- */
 const TOKEN = (s) => String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
 const fmtOutcome = (o) => String(o || "").replace(/_/g, " ");
+const hiColor = (hi) => hi > 66 ? "var(--red)" : hi > 33 ? "var(--orange)" : "var(--green)";
+// some abstracts carry fuel size as {"diameter_cm":[lo,hi]} — coerce to readable text, never [object Object]
+const fmtFuelSize = (v) => v == null ? "—" : typeof v === "string" ? v
+  : Object.entries(v).map(([k, x]) => {
+      const m = String(k).match(/^(.*?)[_-](cm|mm|m)$/), u = m ? m[2] : "", name = m ? m[1] : k;
+      const vals = Array.isArray(x) ? x : [x];
+      return `${String(name).replace(/_/g, " ")} ${vals.join("–")}${u ? " " + u : ""}`;
+    }).join(", ");
 function matchRuns() {
   const f = FUELS[state.fuel]; if (!f) return [];
   // non-solid fuels (droplet/gas) match their own category, never the solid pool
   const cats = state.fuel === "heptane" ? ["droplet", "gas"] : ["solid"];
   const q = TOKEN(f.fuel);
+  const seen = [];
   return RECORDS.filter(r => cats.includes(r.fuel_category)).map(r => {
     const hay = TOKEN(r.fuel + " " + r.objective + " " + r.fuel_category);
     const tf = q.filter(t => hay.some(x => x.startsWith(t) || t.startsWith(x))).length / (q.length || 1);
     const envD = r.o2_conc_pct != null
       ? 1 - clamp(Math.abs(r.o2_conc_pct - state.o2) / 20) * 0.5 : 0.5;
     return { r, score: tf * 0.7 + envD * 0.3 };
-  }).filter(h => h.score > 0.3).sort((a, b) => b.score - a.score).slice(0, 5);
+  }).filter(h => h.score > 0.3).sort((a, b) => b.score - a.score)
+    // "cast PMMA rods" and "PMMA rods" from one investigation read as the same card twice —
+    // keep the higher-scored card when one run's fuel tokens are a subset of another's
+    .filter(h => {
+      const t = TOKEN(h.r.fuel);
+      if (seen.some(s => s.inv === h.r.investigation &&
+          (t.every(x => s.t.includes(x)) || s.t.every(x => t.includes(x))))) return false;
+      seen.push({ inv: h.r.investigation, t });
+      return true;
+    })
+    .slice(0, 5);
 }
 
 /* ---------- live update ---------- */
@@ -161,6 +192,8 @@ function updateAll() {
   const parts = run && !isDroplet ? hiParts(run, state.o2) : null;
   drawGauge(parts, isDroplet);
   renderMatched(matches, parts);
+  // the gauge must name the test it reads — a crew gauge with no provenance is a fake
+  $("hi-src").textContent = parts ? `S·E·C FROM ${run.investigation} RUN ${run.id.split("-").pop()}` : "";
 
   // formula area: droplets don't spread over surfaces — explain the two-stage regime instead
   $("formula-note").hidden = !isDroplet;
@@ -172,22 +205,24 @@ function updateAll() {
 
   // HUD telemetry — 4 corners: tag (TL), split button (TR), physics feed (BL), split banner (BR)
   const g = state.gravity;
-  const shape = isDroplet ? (cool ? "SPHERICAL COOL FLAME" : "SPHERICAL DIFFUSION")
-    : g <= 0.05 ? (state.flow > 20 ? "SPHERICAL · FLOW-DRIFTED" : "SPHERICAL DIFFUSION")
+  const shapeFor = (gg) => isDroplet ? (cool ? "SPHERICAL COOL FLAME" : "SPHERICAL DIFFUSION")
+    : gg <= 0.05 ? (state.flow > 20 ? "SPHERICAL · FLOW-DRIFTED" : "SPHERICAL DIFFUSION")
     : state.flow > 20 ? "FLOW-STRETCHED PLUME" : "BUOYANT TEARDROP";
-  const bl = state.flow > 0 ? "THINNED — FORCED CONVECTION"
-    : g <= 0.05 ? "STAGNANT FILM — PURE DIFFUSION" : "BUOYANT SHEAR LAYER";
-  const rl = cool ? "QUENCH → COOL STAGE ACTIVE"
-    : g <= 0.05 ? "ELEVATED — EXTINCTION RISK" : "VENTED — STABLE";
-  $("hud-left").innerHTML =
-    `<b>FLAME SHAPE</b>${shape}<br><b>BOUNDARY LAYER</b>${bl}<br><b>RADIATIVE LOSS</b>${rl}` +
-    `<br><b>CHAMBER AIR</b>O2 ${state.o2.toFixed(1)}% · ${state.flow} cm/s · ${state.press.toFixed(2)} atm`;
+  const air = `<b>CHAMBER AIR</b>O2 ${state.o2.toFixed(1)}% · ${state.flow} cm/s · ${state.press.toFixed(2)} atm`;
+  // in SPLIT the halves obey different physics — the feed must describe both, not just the 0g side
+  $("hud-left").innerHTML = state.split
+    ? `<b>LEFT 1g</b>${shapeFor(1)}<br><b>RIGHT 0g</b>${shapeFor(0)}<br>${air}`
+    : `<b>FLAME SHAPE</b>${shapeFor(g)}<br><b>BOUNDARY LAYER</b>${state.flow > 0 ? "THINNED — FORCED CONVECTION" : g <= 0.05 ? "STAGNANT FILM — PURE DIFFUSION" : "BUOYANT SHEAR LAYER"}<br><b>RADIATIVE LOSS</b>${cool ? "QUENCH → COOL STAGE ACTIVE" : g <= 0.05 ? "ELEVATED — EXTINCTION RISK" : "VENTED — STABLE"}<br>${air}`;
+  // gravity keys are meaningless while split forces 1g vs 0g — suspend them, say so
+  document.querySelectorAll("#grav-seg button").forEach(b => b.disabled = state.split);
+  $("grav-note").hidden = !state.split;
   $("hud-right").hidden = !state.split;
   if (state.split) $("hud-right").innerHTML =
     "◤ SPLIT COMPARISON ACTIVE — SAME SAMPLE · SAME ATMOSPHERE<br>1g BUOYANT&nbsp;&nbsp;VS&nbsp;&nbsp;0g DIFFUSION — BUOYANCY IS THE ONLY VARIABLE ◢";
 
   const key = matches.map(m => m.r.id).join() + "|" + state.o2;
   if (key !== lastMatchKey) { lastMatchKey = key; if ($("qa-out").dataset.q) runQA($("qa-out").dataset.q); }
+  if (RM) { try { tick(1000); } catch (e) {} } // no rAF loop under reduced motion — redraw once per state change
 }
 function drawGauge(p, isDroplet) {
   if (!p) {
@@ -218,7 +253,7 @@ function renderMatched(matches, parts) {
     // show the run's OWN scored HI only — never a slider-derived HI for a record
     // whose actual O2 is unknown (that would fake a score a judge could catch)
     const p = r.o2_conc_pct != null ? hiParts(r, r.o2_conc_pct) : null;
-    return `<div class="match-card" data-id="${r.id}">
+    return `<div class="match-card" data-id="${r.id}" tabindex="0" role="button">
       <div class="m-top"><b>${esc(r.investigation)}</b><span class="m-hi">${p ? "HI " + p.hi.toFixed(1) : "HI —"}</span></div>
       <div class="m-sub">${esc(r.fuel)} · ${esc(fmtOutcome(r.outcome))} · ${r.o2_conc_pct ?? "—"}% O2${r.jev_verified ? " · VERIFIED" : ""}</div>
       <button class="replay">REPLAY RUN CONDITIONS</button>
@@ -244,8 +279,8 @@ function replayRun(id) {
   if (g != null) {
     const btn = [...document.querySelectorAll("#grav-seg button")]
       .sort((a, b) => Math.abs(parseFloat(a.dataset.g) - g) - Math.abs(parseFloat(b.dataset.g) - g))[0];
-    document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === btn));
     state.gravity = parseFloat(btn.dataset.g);
+    setGrav(state.gravity);
   }
   updateAll();
 }
@@ -262,16 +297,23 @@ function runQA(q) {
   const toks = TOKEN(q);
   const vm = RECORDS.find(r => toks.some(t => TOKEN(r.fuel).some(x => x === t)));
   const verdict = vm
-    ? `<div class="qa-verdict">VERIFIED RUN — <b>${esc(vm.fuel)}</b> [${esc(vm.investigation)}] · ${vm.hazard_index != null ? "HI " + vm.hazard_index : "not scored"} · ${esc(((vm.outcome || "").replace(/_/g, " ")).split(/(?<=[.!?]) /)[0])} · <span class="insp-link" style="cursor:pointer" data-id="${vm.id}">inspector</span></div>`
+    ? `<div class="qa-verdict">VERIFIED RUN — <b>${esc(vm.fuel)}</b> [${esc(vm.investigation)}] · ${vm.hazard_index != null ? "HI " + vm.hazard_index : "not scored"} · ${esc(((vm.outcome || "").replace(/_/g, " ")).split(/(?<=[.!?]) /)[0])} · <span class="insp-link" role="button" tabindex="0" data-id="${vm.id}">inspector</span></div>`
     : "";
   const hits = RECORDS.map(r => {
     const hay = TOKEN([r.objective, r.key_finding, r.evidence_quote, r.fuel].join(" "));
     return { r, s: toks.reduce((a, t) => a + (hay.some(x => x.startsWith(t) || t.startsWith(x)) ? 1 : 0), 0) / toks.length };
   }).filter(h => h.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
-  $("qa-out").innerHTML = verdict + (hits.length ? hits.map(({ r }) =>
-    `<div class="qa-hit">${esc((r.key_finding || r.objective || "").split(/(?<=[.!?]) /)[0])} <b>[${esc(r.investigation)}]</b>
-     — <span class="insp-link" style="cursor:pointer" data-id="${r.id}">inspector</span></div>`).join("")
-    : `<p class="explainer">No verified PSI run for that; showing nothing rather than guessing.</p>`);
+  // tangential quotes must never pose as answers: strong hits speak for the archive,
+  // weak ones only surface under an explicit not-an-answer label
+  const strong = hits.filter(h => h.s >= 0.5), weak = hits.filter(h => h.s < 0.5);
+  const shown = strong.length ? strong : weak;
+  const labeled = !strong.length && shown.length;
+  $("qa-out").innerHTML = verdict +
+    (labeled ? `<p class="explainer qa-fallback">CLOSEST ARCHIVE MENTIONS — NOT AN ANSWER TO YOUR QUESTION</p>` : "") +
+    (shown.length ? shown.map(({ r }) =>
+      `<div class="qa-hit">${esc((r.key_finding || r.objective || "").split(/(?<=[.!?]) /)[0])} <b>[${esc(r.investigation)}]</b>
+       — <span class="insp-link" role="button" tabindex="0" data-id="${r.id}">inspector</span></div>`).join("")
+      : !vm && !hits.length ? `<p class="explainer">No verified PSI run for that; showing nothing rather than guessing.</p>` : "");
   document.querySelectorAll("#qa-out [data-id]").forEach(a => a.onclick = () => openInspector(a.dataset.id));
 }
 
@@ -426,8 +468,7 @@ function drawChamber(x0, w, g, t) {
   }
 }
 
-function tick(t) {
-  const g = state.gravity;
+function tick(t) {  const g = state.gravity;
   const tw = Math.round(cv.clientWidth * devicePixelRatio), th = Math.round(cv.clientHeight * devicePixelRatio);
   if (cv.width !== tw || cv.height !== th) { cv.width = tw; cv.height = th; } // integer-safe self-heal: the old float compare never matched at fractional dpr/zoom, so resize() cleared the canvas every frame
   const W = cv.width, H = cv.height;
@@ -439,7 +480,7 @@ function tick(t) {
 
   // particle advection (shared field; the user's gravity sets convection damping)
   const flowPx = (state.flow / 50) * 4 * devicePixelRatio;
-  for (const p of particles) {
+  if (!RM) for (const p of particles) {
     p.x += (flowPx / W + 0.0012 * (1 - g)); p.p += 0.05;
     if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
   }
@@ -477,11 +518,13 @@ function tick(t) {
   } else {
     drawChamber(0, W, g, t);
   }
-
-  requestAnimationFrame(loop);
 }
 /* a thrown frame must never freeze the chamber mid-demo */
-function loop(t) { try { tick(t); } catch (e) { requestAnimationFrame(loop); } }
+function loop(t) {
+  // reduced motion: frozen clock = static flame geometry, but every state change / resize still redraws
+  try { tick(RM ? 1000 : t); } catch (e) {}
+  requestAnimationFrame(loop);
+}
 
 /* ---------- matrix view ---------- */
 function renderMatrix() {
@@ -492,7 +535,7 @@ function renderMatrix() {
   renderMatrixTable();
   const envs = [...new Set(RECORDS.map(r => r.environment))], outs = ["spread", "smoldering", "extinguished", "no_burn"];
   const n = (e, o) => RECORDS.filter(r => r.environment === e && r.outcome === o).length;
-  $("matrix-grid").innerHTML = `<table><tr><th>environment</th>${outs.map(o => `<th>${o}</th>`).join("")}<th>total</th></tr>` +
+  $("matrix-grid").innerHTML = `<table><tr><th>environment</th>${outs.map(o => `<th>${fmtOutcome(o)}</th>`).join("")}<th>total</th></tr>` +
     envs.map(e => `<tr><td>${esc(e)}</td>${outs.map(o => `<td>${n(e, o) || "·"}</td>`).join("")}<td><b>${RECORDS.filter(r => r.environment === e).length}</b></td></tr>`).join("") + `</table>`;
   const top = [...RECORDS.filter(r => r.hazard_index != null)].sort((a, b) => b.hazard_index - a.hazard_index).slice(0, 3);
   $("compare").innerHTML = top.length ? `<div class="compare-grid">` + top.map(r => `
@@ -511,7 +554,7 @@ function renderMatrix() {
   $("compare").innerHTML += `<h2 style="font-size:11px;letter-spacing:2px;color:var(--dim);margin:18px 0 8px">
     DATA GAPS — VERIFIED SOLID RUNS WITHOUT STATED O2/PRESSURE (${gaps.length})</h2>` +
     (gaps.length ? `<table><tr><th>RUN</th><th>MATERIAL</th><th>OUTCOME</th><th>WHY NOT SCORED</th></tr>` +
-      gaps.map(r => `<tr class="rowbtn" data-id="${r.id}"><td>${esc(r.investigation)}</td><td>${esc(r.fuel)}</td>
+      gaps.map(r => `<tr class="rowbtn" data-id="${r.id}" tabindex="0"><td>${esc(r.investigation)}</td><td>${esc(r.fuel)}</td>
         <td>${esc(fmtOutcome(r.outcome))}</td><td style="color:var(--dim)">abstract states no O2/pressure — null, not guessed</td></tr>`).join("") + `</table>`
       : `<p class="explainer">None.</p>`);
   document.querySelectorAll("#compare .rowbtn").forEach(c => c.onclick = () => openInspector(c.dataset.id));
@@ -519,9 +562,11 @@ function renderMatrix() {
 function renderMatrixTable() {
   const f = {};
   document.querySelectorAll("#filters select").forEach(s => f[s.dataset.k] = s.value);
-  const rows = RECORDS.filter(r => Object.entries(f).every(([k, v]) => !v || r[k] === v));
+  // default order: scored runs by HI desc, unscored (null) last — the view's job is comparing hazard
+  const rows = RECORDS.filter(r => Object.entries(f).every(([k, v]) => !v || r[k] === v))
+    .sort((a, b) => (b.hazard_index ?? -1) - (a.hazard_index ?? -1));
   $("matrix-table").innerHTML = `<table><tr><th>HI</th><th>MATERIAL</th><th>INVESTIGATION</th><th>O2%</th><th>atm</th><th>g</th><th>OUTCOME</th><th>PILLAR</th><th>JEV</th></tr>` +
-    rows.map(r => `<tr class="rowbtn" data-id="${r.id}"><td>${r.hazard_index != null ? `<span class="hi-bar" style="width:${Math.max(6, r.hazard_index * 0.6)}px"></span> ${r.hazard_index}` : "—"}</td>
+    rows.map(r => `<tr class="rowbtn" data-id="${r.id}" tabindex="0"><td>${r.hazard_index != null ? `<span class="hi-bar" style="width:${Math.max(6, r.hazard_index * 0.6)}px;background:${hiColor(r.hazard_index)}"></span> ${r.hazard_index}` : "—"}</td>
       <td>${esc(r.fuel)}</td><td>${esc(r.investigation)}</td><td>${r.o2_conc_pct ?? "—"}</td><td>${r.pressure_atm ?? "—"}</td><td>${r.gravity_g ?? "—"}</td>
       <td>${esc(fmtOutcome(r.outcome))}</td><td>${esc(r.pillar)}</td><td><span class="badge ${r.jev_verified ? "yes" : "no"}">${r.jev_verified ? "VERIFIED" : "FLAGGED"}</span></td></tr>`).join("") + `</table>`;
   document.querySelectorAll("#matrix-table .rowbtn").forEach(c => c.onclick = () => openInspector(c.dataset.id));
@@ -535,7 +580,7 @@ function renderImpact() {
       ${c.url ? `<a href="${c.url}" target="_blank">SOURCE ↗</a>` : ""}</div>`).join("");
   fetch("data/sources.json").then(r => r.json()).then(s => {
     $("impact-sources").innerHTML = `<h2 style="font-size:11px;letter-spacing:2px;color:var(--dim);margin:16px 0 8px">CORPUS SOURCES (${s.length})</h2>` +
-      s.map(x => `<div style="font-size:10px;color:var(--dim);margin-bottom:3px">${esc(x.file)} — <span class="insp-link" style="cursor:default">${esc(x.description || x.source_url)}</span></div>`).join("");
+      s.map(x => `<div class="src-chip"><a href="${esc(x.source_url || "#")}" target="_blank" rel="noopener">${esc((x.file || "").replace(/\.(txt|md)$/i, ""))}</a><span>${esc(x.description || "")}</span></div>`).join("");
   });
 }
 
@@ -558,7 +603,7 @@ function openInspector(id) {
       <dt>O2 / pressure</dt><dd>${r.o2_conc_pct ?? "—"}% @ ${r.pressure_atm ?? "—"} atm</dd>
       <dt>airflow / gravity</dt><dd>${r.airflow_cm_s ?? "—"} cm/s · ${r.gravity_g ?? "—"} g</dd>
       <dt>environment</dt><dd>${esc(r.environment ?? "—")}</dd>
-      <dt>fuel shape / size</dt><dd>${esc(r.fuel_shape ?? "—")} / ${esc(r.fuel_size ?? "—")}</dd>
+      <dt>fuel shape / size</dt><dd>${esc(r.fuel_shape ?? "—")} / ${esc(fmtFuelSize(r.fuel_size))}</dd>
       <dt>pillar</dt><dd>${esc(r.pillar ?? "—")}</dd>
       <dt>sensors</dt><dd>${esc([].concat(r.sensors || []).join(", ")) || "—"}</dd>
       <dt>variables vs runs</dt><dd>${esc(r.variables_vs_other_runs ?? "—")}</dd>
@@ -574,4 +619,12 @@ function openInspector(id) {
   $("inspector").classList.add("open");
 }
 document.addEventListener("keydown", e => e.key === "Escape" && $("inspector").classList.remove("open"));
+// keyboard path for click-only instruments: matrix rows, match cards, inspector links
+document.addEventListener("keydown", e => {
+  const t = e.target;
+  if ((e.key === "Enter" || e.key === " ") && t.matches && t.matches('.rowbtn, .match-card, .insp-link[role="button"]')) {
+    e.preventDefault();
+    t.click();
+  }
+});
 $("inspector").addEventListener("click", e => e.target.id === "inspector" && e.target.classList.remove("open"));
