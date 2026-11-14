@@ -37,6 +37,14 @@ main { height: calc(100vh - 52px); }
 .view { display: none; height: 100%; }
 .view.active { display: block; }
 .workbench { display: grid; grid-template-columns: 300px 1fr 350px; height: 100%; }
+@media (max-width: 1100px) {
+  body { overflow: auto; }
+  main { height: auto; }
+  .workbench { grid-template-columns: 1fr; height: auto; }
+  .col-center { min-height: 70vh; }
+  .panel, .col-right { border: 0; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 1100px) { #views button { padding: 8px 6px; font-size: 9px; } .topstats { display: none; } }
 .workbench > *, .matrix-wrap, .impact-wrap { overflow-y: auto; }
 .panel { padding: 14px; border-right: 1px solid var(--line); background: var(--panel); }
 .col-right { border-right: 0; border-left: 1px solid var(--line); }

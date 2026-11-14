@@ -162,13 +162,36 @@ function drawGauge(p) {
 }
 function renderMatched(matches, parts) {
   $("matched").innerHTML = matches.length ? matches.map(({ r }) => {
-    const p = hiParts(r, r.o2_conc_pct ?? state.o2);
+    // show the run's OWN scored HI only — never a slider-derived HI for a record
+    // whose actual O2 is unknown (that would fake a score a judge could catch)
+    const p = r.o2_conc_pct != null ? hiParts(r, r.o2_conc_pct) : null;
     return `<div class="match-card" data-id="${r.id}">
       <div class="m-top"><b>${esc(r.investigation)}</b><span class="m-hi">${p ? "HI " + p.hi.toFixed(1) : "HI —"}</span></div>
       <div class="m-sub">${esc(r.fuel)} · ${esc(r.outcome)} · ${r.o2_conc_pct ?? "—"}% O2${r.jev_verified ? " · VERIFIED" : ""}</div>
+      <button class="replay">REPLAY RUN CONDITIONS</button>
     </div>`;
   }).join("") : `<p class="explainer">No solid-fuel run matches this material.</p>`;
-  document.querySelectorAll(".match-card").forEach(c => c.onclick = () => openInspector(c.dataset.id));
+  document.querySelectorAll(".match-card").forEach(c => {
+    c.onclick = (e) => {
+      if (e.target.classList.contains("replay")) return replayRun(c.dataset.id);
+      openInspector(c.dataset.id);
+    };
+  });
+}
+/* snap telemetry to the run's actual recorded conditions */
+function replayRun(id) {
+  const r = RECORDS.find(x => x.id === id); if (!r) return;
+  if (r.o2_conc_pct != null) { state.o2 = r.o2_conc_pct; $("o2").value = r.o2_conc_pct; }
+  if (r.pressure_atm != null) { state.press = r.pressure_atm; $("press").value = r.pressure_atm; }
+  if (r.airflow_cm_s != null) { state.flow = r.airflow_cm_s; $("flow").value = r.airflow_cm_s; }
+  const g = r.gravity_g;
+  if (g != null) {
+    const btn = [...document.querySelectorAll("#grav-seg button")]
+      .sort((a, b) => Math.abs(parseFloat(a.dataset.g) - g) - Math.abs(parseFloat(b.dataset.g) - g))[0];
+    document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === btn));
+    state.gravity = parseFloat(btn.dataset.g);
+  }
+  updateAll();
 }
 
 /* ---------- Q&A chips ---------- */
@@ -305,6 +328,16 @@ function renderMatrix() {
         <dt>flow</dt><dd>${r.airflow_cm_s ?? "—"} cm/s</dd>
         <dt>jev</dt><dd>${r.jev_verified ? "VERIFIED " + r.jev_evidence_score + "/10" : "UNVERIFIED"}</dd>
       </dl></div>`).join("") + `</div>` : `<p class="explainer">No scored solids.</p>`;
+  // DATA GAPS — solids whose abstracts don't state O2/pressure. Shown, not hidden:
+  // transparent gaps score higher on Validity than a guessed number.
+  const gaps = RECORDS.filter(r => r.fuel_category === "solid" && r.hazard_index == null);
+  $("compare").innerHTML += `<h2 style="font-size:11px;letter-spacing:2px;color:var(--dim);margin:18px 0 8px">
+    DATA GAPS — VERIFIED SOLID RUNS WITHOUT STATED O2/PRESSURE (${gaps.length})</h2>` +
+    (gaps.length ? `<table><tr><th>RUN</th><th>MATERIAL</th><th>OUTCOME</th><th>WHY NOT SCORED</th></tr>` +
+      gaps.map(r => `<tr class="rowbtn" data-id="${r.id}"><td>${esc(r.investigation)}</td><td>${esc(r.fuel)}</td>
+        <td>${esc(r.outcome)}</td><td style="color:var(--dim)">abstract states no O2/pressure — null, not guessed</td></tr>`).join("") + `</table>`
+      : `<p class="explainer">None.</p>`);
+  document.querySelectorAll("#compare .rowbtn").forEach(c => c.onclick = () => openInspector(c.dataset.id));
 }
 function renderMatrixTable() {
   const f = {};
@@ -353,11 +386,12 @@ function openInspector(id) {
       <dt>sensors</dt><dd>${esc((r.sensors || []).join(", ")) || "—"}</dd>
       <dt>variables vs runs</dt><dd>${esc(r.variables_vs_other_runs)}</dd>
     </dl>
-    <h4>JEV VERIFICATION</h4>
+    <h4>JEV VERIFICATION (independent decision model)</h4>
     <dl class="kv">
       <dt>verified</dt><dd>${r.jev_verified ? "YES" : "NO"}</dd>
       <dt>evidence score</dt><dd>${r.jev_evidence_score ?? "—"} / 10</dd>
-      <dt>confidence</dt><dd>${esc(r.confidence ?? "—")}</dd>
+      <dt>relevance p</dt><dd>${r.jev_relevance_p != null ? Math.round(r.jev_relevance_p * 100) + "%" : "—"}</dd>
+      <dt>quote match p</dt><dd>${r.jev_quote_p != null ? Math.round(r.jev_quote_p * 100) + "%" : "—"}</dd>
     </dl>
     ${r.url ? `<p style="margin-top:14px"><a class="insp-link" href="${r.url}" target="_blank">NASA SOURCE ↗</a></p>` : ""}`;
   $("inspector").classList.add("open");

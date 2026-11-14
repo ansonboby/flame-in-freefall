@@ -1,8 +1,8 @@
 {
  "generated": "2026-11-14",
- "total": 41,
- "verified": 32,
- "pct_verified": 78,
+ "total": 23,
+ "verified": 19,
+ "pct_verified": 83,
  "formula": "HI = 100 \u00d7 (0.35\u00b7S + 0.25\u00b7O + 0.20\u00b7E + 0.20\u00b7C)",
  "environments": {
   "spacecraft": {
