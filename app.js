@@ -48,7 +48,7 @@ async function init() {
   ]);
   renderTop(); wireViews(); wireControls(); renderChips(); renderMatrix(); renderImpact();
   $("tick-text").textContent = `ARTEMIS II — commander: "make the fire alarm go off when you're still about 80,000 miles from home" · spacecraft fire safety is not history`;
-  updateAll(); requestAnimationFrame(tick);
+  updateAll(); requestAnimationFrame(loop);
 }
 
 function renderTop() {
@@ -421,7 +421,7 @@ function drawChamber(x0, w, g, t) {
 
 function tick(t) {
   const W = cv.width, H = cv.height, g = state.gravity;
-  if (W !== cv.clientWidth * devicePixelRatio) { resize(); return requestAnimationFrame(tick); } // self-heal a 0x0 canvas
+  if (W !== cv.clientWidth * devicePixelRatio) { resize(); return requestAnimationFrame(loop); } // self-heal a 0x0 canvas
   cx.clearRect(0, 0, W, H);
   // grid
   cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
@@ -469,8 +469,10 @@ function tick(t) {
     drawChamber(0, W, g, t);
   }
 
-  requestAnimationFrame(tick);
+  requestAnimationFrame(loop);
 }
+/* a thrown frame must never freeze the chamber mid-demo */
+function loop(t) { try { tick(t); } catch (e) { requestAnimationFrame(loop); } }
 
 /* ---------- matrix view ---------- */
 function renderMatrix() {
