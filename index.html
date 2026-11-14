@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PYRO-0G // NASA PSI Combustion Telemetry</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">PYRO-0G <span>// NASA PSI COMBUSTION TELEMETRY</span></div>
+  <div class="ticker"><span class="tick-tag">CREW ALERT</span><span id="tick-text"></span></div>
+  <div class="topstats">
+    <div class="tstat"><b id="st-records">—</b><i>RECORDS</i></div>
+    <div class="tstat"><b id="st-verified">—</b><i>DUAL-VERIFIED</i></div>
+    <div class="tstat"><b id="st-invs">—</b><i>INVESTIGATIONS</i></div>
+  </div>
+  <nav id="views">
+    <button data-view="simulator" class="active">SIMULATOR WORKBENCH</button>
+    <button data-view="matrix">TEST MATRIX &amp; COMPARE</button>
+    <button data-view="impact">MISSION IMPACT &amp; SPINOFFS</button>
+  </nav>
+  <a id="csv-btn" href="data/flame.csv" download>EXPORT CSV</a>
+</header>
+
+<main>
+
+<!-- ============ VIEW 1: SIMULATOR WORKBENCH ============ -->
+<section id="view-simulator" class="view active">
+  <div class="workbench">
+
+    <aside class="panel col-left">
+      <h2>CREW ENVIRONMENT PRESETS</h2>
+      <div class="env-grid" id="env-presets"></div>
+      <p class="explainer" id="env-explainer"></p>
+
+      <h2>FUEL / MATERIAL</h2>
+      <div class="env-grid" id="fuel-presets"></div>
+      <p class="explainer" id="fuel-spec"></p>
+
+      <h2>TELEMETRY</h2>
+      <div class="slider-row"><label>OXYGEN <output id="o2-out">21.0 %</output></label>
+        <input type="range" id="o2" min="15" max="40" step="0.5" value="21"></div>
+      <div class="slider-row"><label>AIRFLOW FAN <output id="flow-out">0 cm/s</output></label>
+        <input type="range" id="flow" min="0" max="50" step="1" value="0"></div>
+      <div class="slider-row"><label>PRESSURE <output id="press-out">1.00 atm</output></label>
+        <input type="range" id="press" min="0.3" max="1" step="0.01" value="1"></div>
+      <div class="slider-row"><label>GRAVITY</label>
+        <div class="seg" id="grav-seg">
+          <button data-g="1" class="active">1g EARTH</button>
+          <button data-g="0.38">0.38g MARS</button>
+          <button data-g="0.16">0.16g MOON</button>
+          <button data-g="0">0g MICRO-G</button>
+        </div></div>
+      <p class="explainer">Enriched O2 raises the oxygen index of every solid — flame spread that
+      self-extinguishes at 21% can sustain at 34%. Lower pressure thins the boundary layer and
+      changes diffusion transport. Gravity sets buoyancy: it shapes the flame and the flow it creates.</p>
+    </aside>
+
+    <section class="panel col-center">
+      <div class="canvas-wrap">
+        <canvas id="chamber"></canvas>
+        <div class="chamber-tag" id="chamber-tag">COMBUSTION CHAMBER — 1g BUOYANT REGIME</div>
+      </div>
+      <div class="gauge-zone">
+        <div class="gauge">
+          <svg viewBox="0 0 120 120">
+            <circle class="gauge-bg" cx="60" cy="60" r="50"/>
+            <circle class="gauge-arc" id="gauge-arc" cx="60" cy="60" r="50"/>
+          </svg>
+          <div class="gauge-num"><b id="hi-num">—</b><i>FLAME HAZARD INDEX</i></div>
+        </div>
+        <div class="formula">
+          <h3>HI = 100 × (0.35·S + 0.25·O + 0.20·E + 0.20·C)</h3>
+          <div class="fb-row"><span>SEVERITY (S)</span><div class="fb-bar"><i id="fb-S"></i></div><b id="fbv-S">—</b></div>
+          <div class="fb-row"><span>OXYGEN (O)</span><div class="fb-bar"><i id="fb-O"></i></div><b id="fbv-O">—</b></div>
+          <div class="fb-row"><span>EXTINGUISH DIFF. (E)</span><div class="fb-bar"><i id="fb-E"></i></div><b id="fbv-E">—</b></div>
+          <div class="fb-row"><span>JEV CONFIDENCE (C)</span><div class="fb-bar"><i id="fb-C"></i></div><b id="fbv-C">—</b></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel col-right">
+      <h2>Q&A RESEARCH CHIPS</h2>
+      <div class="chips" id="chips"></div>
+      <div id="qa-out"></div>
+
+      <h2>MATCHED NASA PSI EXPERIMENTS</h2>
+      <p class="explainer">Closest verified runs to current telemetry. Updates live.</p>
+      <div id="matched"></div>
+    </aside>
+
+  </div>
+</section>
+
+<!-- ============ VIEW 2: TEST MATRIX & COMPARE ============ -->
+<section id="view-matrix" class="view">
+  <div class="matrix-wrap">
+    <div class="filters" id="filters"></div>
+    <div id="matrix-table"></div>
+    <h2>ENVIRONMENT × OUTCOME MATRIX</h2>
+    <div id="matrix-grid"></div>
+    <h2>SOLID-FUEL HAZARD COMPARE</h2>
+    <div id="compare"></div>
+  </div>
+</section>
+
+<!-- ============ VIEW 3: MISSION IMPACT & SPINOFFS ============ -->
+<section id="view-impact" class="view">
+  <div class="impact-wrap">
+    <div id="timeline"></div>
+    <div id="impact-sources"></div>
+  </div>
+</section>
+
+</main>
+
+<!-- verification inspector -->
+<div id="inspector" class="inspector"><div class="inspector-inner" id="inspector-body"></div></div>
+
+<script src="app.js"></script>
+</body>
+</html>

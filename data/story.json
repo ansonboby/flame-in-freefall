@@ -1,0 +1,66 @@
+{
+ "artemis_ii": {
+  "id": "artemis_ii",
+  "era": "2026",
+  "title": "Fire alarm aboard Artemis II",
+  "body": "During the recent Artemis II mission, a smoke alarm sounded while the spacecraft was far from home. The commander: \u201c[If] you want to get somebody's attention really quick, make the fire alarm go off in your spacecraft when you're still about 80,000 miles from home.\u201d Spacecraft fire safety is not history \u2014 it is happening now.",
+  "url": "https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/",
+  "source_note": "Official 2026 challenge background text"
+ },
+ "apollo_1": {
+  "id": "apollo_1",
+  "era": "1967",
+  "title": "Apollo 1",
+  "body": "A fire erupted during a pre-launch test of the Apollo 1 spacecraft, killing the crew. The oxygen-filled cabin, flammable materials, and ignition sources together made the fire seconds-fast. The investigation reshaped how NASA selects materials and controls ignition sources \u2014 the prevention pillar of spacecraft fire safety.",
+  "url": "https://sma.nasa.gov/sma-disciplines/accllp/apollo-1",
+  "source_note": "Official NASA Safety Center page (from challenge resource list)"
+ },
+ "apollo_13": {
+  "id": "apollo_13",
+  "era": "1970",
+  "title": "Apollo 13",
+  "body": "An oxygen tank exploded during the flight to the Moon, threatening the crew hundreds of thousands of miles from home. The investigation and lessons learned drove decades of redesign in life-support and fire-safety engineering.",
+  "url": "https://sma.nasa.gov/sma-disciplines/accllp/apollo-13",
+  "source_note": "Official NASA Safety Center page (from challenge resource list)"
+ },
+ "mir_1997": {
+  "id": "mir_1997",
+  "era": "1997",
+  "title": "Fire aboard space station Mir",
+  "body": "An oxygen generator failure ignited a fire aboard the Russian space station Mir during joint operations preparing for the International Space Station. The multinational crew survived \u2014 and the lessons fed directly into ISS fire-safety design, occupied from 2000.",
+  "url": "https://www.nasa.gov/history/25-years-ago-fire-aboard-space-station-mir/",
+  "source_note": "Official NASA history page (from challenge resource list)"
+ },
+ "water_mist": {
+  "id": "water_mist",
+  "era": "ISS era",
+  "title": "Fine-water-mist extinguishers",
+  "body": "Fine-water-mist fire extinguishers developed for the ISS suppress fires with far less water than a hose \u2014 and their technology has practical applications on Earth, protecting people where water damage matters as much as the fire.",
+  "url": "https://psi.nasa.gov/physci/repo/search?q=combustion",
+  "source_note": "Challenge text; PSI repository hosts the underlying data"
+ },
+ "fire_detector": {
+  "id": "fire_detector",
+  "era": "1970s",
+  "title": "The smarter smoke detector",
+  "body": "A smoke detector developed for the Space Shuttle discriminates between smoke and dust, cutting nuisance alarms. On Earth it found industrial uses \u2014 including mining operations, where dust is everywhere.",
+  "url": "https://spinoff.nasa.gov/node/9407",
+  "source_note": "Official NASA Spinoff page (from challenge resource list)"
+ },
+ "air_tanks": {
+  "id": "air_tanks",
+  "era": "1970s",
+  "title": "Fireman's air tanks",
+  "body": "Spacesuit life-support technology from the 1970s was adapted to improve firefighters' air tanks and breathing gear \u2014 the same engineering that keeps a crew breathing in vacuum keeps a firefighter breathing in a burning building.",
+  "url": "https://spinoff.nasa.gov/node/9582",
+  "source_note": "Official NASA Spinoff page (from challenge resource list)"
+ },
+ "fire_attire": {
+  "id": "fire_attire",
+  "era": "1980s",
+  "title": "New technology for the fire attire",
+  "body": "NASA spacesuit materials technology from the 1980s improved firefighter protective clothing \u2014 heat and flame resistance engineered for space, worn into fires on Earth.",
+  "url": "https://spinoff.nasa.gov/node/9918",
+  "source_note": "Official NASA Spinoff page (from challenge resource list)"
+ }
+}

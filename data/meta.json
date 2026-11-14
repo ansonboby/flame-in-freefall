@@ -1,0 +1,24 @@
+{
+ "generated": "2026-11-14",
+ "total": 41,
+ "verified": 32,
+ "pct_verified": 78,
+ "formula": "HI = 100 \u00d7 (0.35\u00b7S + 0.25\u00b7O + 0.20\u00b7E + 0.20\u00b7C)",
+ "environments": {
+  "spacecraft": {
+   "label": "Spacecraft",
+   "o2_pct": 21.0,
+   "pressure_atm": 1.0
+  },
+  "lunar_base": {
+   "label": "Lunar / Martian Base",
+   "o2_pct": 34.0,
+   "pressure_atm": 0.54
+  },
+  "rover": {
+   "label": "Pressurized Rover",
+   "o2_pct": 34.0,
+   "pressure_atm": 0.57
+  }
+ }
+}

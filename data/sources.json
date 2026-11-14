@@ -1,0 +1,57 @@
+[
+ {
+  "file": "00_researchers_guide.txt",
+  "source_url": "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/",
+  "description": "Document 0 landing page (verbatim text; full PDF link dead on nasa.gov, wayback retry pending)"
+ },
+ {
+  "file": "01_bass.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Burning%20and%20Suppression%20of%20Solids%20BASS%20microgravity",
+  "description": "NTRS search for BASS (abstracts from: https://ntrs.nasa.gov/citations/20210011385, https://ntrs.nasa.gov/citations/20160000593, https://ntrs.nasa.gov/citations/20140011099\u2026)"
+ },
+ {
+  "file": "02_bass_ii.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Burning%20and%20Suppression%20of%20Solids-II%20BASS-II",
+  "description": "NTRS search for BASS-II (abstracts from: https://ntrs.nasa.gov/citations/20210011385, https://ntrs.nasa.gov/citations/20160000593, https://ntrs.nasa.gov/citations/20150019858\u2026)"
+ },
+ {
+  "file": "03_saffire_i.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Saffire-I%20spacecraft%20fire%20experiment",
+  "description": "NTRS search for Saffire-I (abstracts from: https://ntrs.nasa.gov/citations/20170000230, https://ntrs.nasa.gov/citations/20170001636\u2026)"
+ },
+ {
+  "file": "04_saffire_ii.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Saffire-II%20spacecraft%20fire%20experiment",
+  "description": "NTRS search for Saffire-II (abstracts from: https://ntrs.nasa.gov/citations/20170000230, https://ntrs.nasa.gov/citations/20170001636, https://ntrs.nasa.gov/citations/20200000557\u2026)"
+ },
+ {
+  "file": "05_saffire_iii.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Saffire-III%20spacecraft%20fire%20experiment",
+  "description": "NTRS search for Saffire-III (abstracts from: https://ntrs.nasa.gov/citations/20170000230, https://ntrs.nasa.gov/citations/20170001636\u2026)"
+ },
+ {
+  "file": "06_same.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Smoke%20and%20Aerosol%20Measurement%20Experiment%20SAME",
+  "description": "NTRS search for SAME (abstracts from: https://ntrs.nasa.gov/citations/20130000422, https://ntrs.nasa.gov/citations/20070031686, https://ntrs.nasa.gov/citations/20170007283\u2026)"
+ },
+ {
+  "file": "07_same_r.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/20130000422",
+  "description": "NTRS citation 20130000422 \u2014 SAME-2 Reflight (Expedition 24), smoke particle morphology and size results"
+ },
+ {
+  "file": "08_flex.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Flame%20Extinguishment%20Experiment%20FLEX%20microgravity",
+  "description": "NTRS search for FLEX (abstracts from: https://ntrs.nasa.gov/citations/20150023456, https://ntrs.nasa.gov/citations/20090014812, https://ntrs.nasa.gov/citations/20120015928\u2026)"
+ },
+ {
+  "file": "09_daft.txt",
+  "source_url": "https://ntrs.nasa.gov/api/citations/search?q=Dust%20and%20Aerosol%20Measurement%20Feasibility%20Test%20DAFT",
+  "description": "NTRS search for DAFT (abstracts from: https://ntrs.nasa.gov/citations/20050215648, https://ntrs.nasa.gov/citations/20070031686\u2026)"
+ },
+ {
+  "file": "10_daft_2.txt",
+  "source_url": "https://ntrs.nasa.gov/citations/20220004425",
+  "description": "DAFT-lineage particulate monitoring (verbatim abstract)"
+ }
+]
