@@ -7,7 +7,7 @@ const clamp = (x, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
 const SEV = { spread: 1.0, smoldering: 0.5, extinguished: 0.0, no_burn: 0.0 };
 
 let RECORDS = [], META = {}, STORY = {};
-const state = { o2: 21, flow: 0, press: 1.0, gravity: 1, fuel: null, env: "station" };
+const state = { o2: 21, flow: 0, press: 1.0, gravity: 1, fuel: null, env: "station", split: false };
 
 const ENV_PRESETS = {
   iss:    { label: "ISS STATION",        sub: "21.0% O2 / 1.00 atm", o2: 21,   press: 1.00,
@@ -93,6 +93,11 @@ function wireControls() {
     document.querySelectorAll("#grav-seg button").forEach(x => x.classList.toggle("active", x === b));
     updateAll();
   });
+  $("split-btn").onclick = () => {
+    state.split = !state.split;
+    $("split-btn").classList.toggle("on", state.split);
+    updateAll();
+  };
   // default selections
   $("env-presets").querySelector("[data-env=iss]").click();
   $("fuel-presets").querySelector("[data-fuel=pmma_sheet]").click();
@@ -131,8 +136,9 @@ function updateAll() {
   $("o2-out").textContent = state.o2.toFixed(1) + " %";
   $("flow-out").textContent = state.flow + " cm/s";
   $("press-out").textContent = state.press.toFixed(2) + " atm";
-  $("chamber-tag").textContent =
-    `COMBUSTION CHAMBER — ${state.gravity === 0 ? "0g MICROGRAVITY REGIME" : state.gravity.toFixed(2) + "g REGIME"} · ${ENV_PRESETS[state.env].label}`;
+  $("chamber-tag").textContent = state.split
+    ? `COMBUSTION CHAMBER — SPLIT MODE · 1g VS 0g`
+    : `COMBUSTION CHAMBER — ${state.gravity === 0 ? "0g MICROGRAVITY REGIME" : state.gravity.toFixed(2) + "g REGIME"} · ${ENV_PRESETS[state.env].label}`;
 
   // gauge: live O from telemetry, S/E/C from the closest matched solid run
   const matches = matchRuns();
@@ -221,27 +227,21 @@ function resize() {
 addEventListener("resize", resize); resize();
 
 let particles = Array.from({ length: 60 }, () => ({ x: Math.random(), y: Math.random(), p: Math.random() * 6 }));
-function tick(t) {
-  const W = cv.width, H = cv.height, g = state.gravity;
-  cx.clearRect(0, 0, W, H);
-  // grid
-  cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
-  for (let x = 0; x < W; x += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
-  for (let y = 0; y < H; y += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
 
-  const cxp = W * 0.5, cyp = H * 0.62; // sample anchor
+/* one combustion chamber inside rect (x0..x0+w); g is forced per call so
+   SPLIT mode can burn the same fuel in the same atmosphere at 1g and 0g */
+function drawChamber(x0, w, g, t) {
+  const H = cv.height;
+  const cxp = x0 + w * 0.5, cyp = H * 0.62; // sample anchor
   const fuel = FUELS[state.fuel];
   const isDroplet = state.fuel === "heptane";
 
-  // airflow particles (left to right; speed ∝ fan, damped by gravity-set convection in 1g)
-  const flowPx = (state.flow / 50) * 4 * devicePixelRatio;
+  // airflow particles (render only; advection happens once per frame in tick)
   cx.fillStyle = "rgba(63,208,216,.45)";
   for (const p of particles) {
-    p.x += (flowPx / W + 0.0012 * (1 - g)) ; p.p += 0.05;
-    if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
     const yy = p.y + 0.03 * Math.sin(p.p + t / 900);
     cx.beginPath();
-    cx.arc(p.x * W, ((yy * 0.9) + 0.05) * H, 1.4 * devicePixelRatio, 0, 7);
+    cx.arc(x0 + p.x * w, ((yy * 0.9) + 0.05) * H, 1.4 * devicePixelRatio, 0, 7);
     cx.fill();
   }
 
@@ -296,12 +296,50 @@ function tick(t) {
     }
     cx.fill();
   }
+}
 
-  // labels
+function tick(t) {
+  const W = cv.width, H = cv.height, g = state.gravity;
+  cx.clearRect(0, 0, W, H);
+  // grid
+  cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+  for (let y = 0; y < H; y += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+
+  // particle advection (shared field; the user's gravity sets convection damping)
+  const flowPx = (state.flow / 50) * 4 * devicePixelRatio;
+  for (const p of particles) {
+    p.x += (flowPx / W + 0.0012 * (1 - g)); p.p += 0.05;
+    if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
+  }
+
   cx.fillStyle = "rgba(109,125,146,.9)";
   cx.font = `${11 * devicePixelRatio}px JetBrains Mono, monospace`;
-  if (cool) cx.fillText("INVISIBLE COOL FLAME — FLEX REGIME (pulse visible via laser heat feedback)", 14 * devicePixelRatio, H - 16 * devicePixelRatio);
-  else cx.fillText(`O2 ${state.o2.toFixed(1)}%  ·  FLOW ${state.flow} cm/s  ·  ${state.press.toFixed(2)} atm  ·  ${g === 0 ? "0g" : g + "g"}`, 14 * devicePixelRatio, H - 16 * devicePixelRatio);
+
+  if (state.split) {
+    // SPLIT: identical fuel + atmosphere, 1g vs 0g side by side — the core physics, visible at a glance
+    const half = W / 2;
+    drawChamber(0, half, 1, t);
+    drawChamber(half, half, 0, t);
+    cx.strokeStyle = "rgba(255,122,47,.35)"; cx.lineWidth = 1;
+    cx.setLineDash([5 * devicePixelRatio, 7 * devicePixelRatio]);
+    cx.beginPath(); cx.moveTo(half, 0); cx.lineTo(half, H); cx.stroke();
+    cx.setLineDash([]);
+    cx.fillStyle = "rgba(255,169,110,.95)";
+    cx.font = `${12 * devicePixelRatio}px JetBrains Mono, monospace`;
+    cx.fillText("1g EARTH — BUOYANT FLAME", 14 * devicePixelRatio, 46 * devicePixelRatio);
+    cx.fillText("0g ORBIT — DIFFUSION FLAME", half + 14 * devicePixelRatio, 46 * devicePixelRatio);
+    cx.fillStyle = "rgba(109,125,146,.9)";
+    cx.font = `${11 * devicePixelRatio}px JetBrains Mono, monospace`;
+    cx.textAlign = "center";
+    cx.fillText(`SAME SAMPLE · O2 ${state.o2.toFixed(1)}% · FLOW ${state.flow} cm/s · ${state.press.toFixed(2)} atm`, half, H - 16 * devicePixelRatio);
+    cx.textAlign = "left";
+  } else {
+    drawChamber(0, W, g, t);
+    const cool = state.fuel === "heptane" && state.o2 < 30;
+    if (cool) cx.fillText("INVISIBLE COOL FLAME — FLEX REGIME (pulse visible via laser heat feedback)", 14 * devicePixelRatio, H - 16 * devicePixelRatio);
+    else cx.fillText(`O2 ${state.o2.toFixed(1)}%  ·  FLOW ${state.flow} cm/s  ·  ${state.press.toFixed(2)} atm  ·  ${g === 0 ? "0g" : g + "g"}`, 14 * devicePixelRatio, H - 16 * devicePixelRatio);
+  }
 
   requestAnimationFrame(tick);
 }
