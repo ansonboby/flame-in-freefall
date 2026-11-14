@@ -209,16 +209,20 @@ function updateAll() {
     : gg <= 0.05 ? (state.flow > 20 ? "SPHERICAL · FLOW-DRIFTED" : "SPHERICAL DIFFUSION")
     : state.flow > 20 ? "FLOW-STRETCHED PLUME" : "BUOYANT TEARDROP";
   const air = `<b>CHAMBER AIR</b>O2 ${state.o2.toFixed(1)}% · ${state.flow} cm/s · ${state.press.toFixed(2)} atm`;
-  // in SPLIT the halves obey different physics — the feed must describe both, not just the 0g side
+  // in SPLIT the halves obey different physics — the feed must describe both, not just the 0g side;
+  // the air line is dropped there (the banner already states the shared atmosphere, and the two
+  // boxes must never overlap on narrow ports)
   $("hud-left").innerHTML = state.split
-    ? `<b>LEFT 1g</b>${shapeFor(1)}<br><b>RIGHT 0g</b>${shapeFor(0)}<br>${air}`
+    ? `<b>LEFT 1g</b>${shapeFor(1)}<br><b>RIGHT 0g</b>${shapeFor(0)}`
     : `<b>FLAME SHAPE</b>${shapeFor(g)}<br><b>BOUNDARY LAYER</b>${state.flow > 0 ? "THINNED — FORCED CONVECTION" : g <= 0.05 ? "STAGNANT FILM — PURE DIFFUSION" : "BUOYANT SHEAR LAYER"}<br><b>RADIATIVE LOSS</b>${cool ? "QUENCH → COOL STAGE ACTIVE" : g <= 0.05 ? "ELEVATED — EXTINCTION RISK" : "VENTED — STABLE"}<br>${air}`;
   // gravity keys are meaningless while split forces 1g vs 0g — suspend them, say so
   document.querySelectorAll("#grav-seg button").forEach(b => b.disabled = state.split);
   $("grav-note").hidden = !state.split;
+  // split: the physics feed stacks above the banner — side-by-side they collide on narrow ports
+  document.querySelector(".canvas-wrap").classList.toggle("split-on", state.split);
   $("hud-right").hidden = !state.split;
   if (state.split) $("hud-right").innerHTML =
-    "◤ SPLIT COMPARISON ACTIVE — SAME SAMPLE · SAME ATMOSPHERE<br>1g BUOYANT&nbsp;&nbsp;VS&nbsp;&nbsp;0g DIFFUSION — BUOYANCY IS THE ONLY VARIABLE ◢";
+    "◤ SPLIT — SAME SAMPLE · SAME ATMOSPHERE<br>1g BUOYANT&nbsp;&nbsp;VS&nbsp;&nbsp;0g DIFFUSION — BUOYANCY IS THE ONLY VARIABLE ◢";
 
   const key = matches.map(m => m.r.id).join() + "|" + state.o2;
   if (key !== lastMatchKey) { lastMatchKey = key; if ($("qa-out").dataset.q) runQA($("qa-out").dataset.q); }

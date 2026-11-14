@@ -176,12 +176,13 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 20px; border-radius: 
 /* HUD telemetry overlays — 4 corners of the port glass */
 .hud { position: absolute; font-size: 10px; letter-spacing: 1px; line-height: 1.8;
   color: var(--cyan); background: rgba(7,9,13,.78); border: 1px solid var(--line);
-  padding: 6px 9px; pointer-events: none; max-width: calc(50% - 14px); overflow: hidden; }
+  padding: 6px 9px; pointer-events: none; white-space: nowrap; overflow: hidden; }
 .hud b { color: var(--dim); font-weight: 400; margin-right: 5px; }
 .hud-bl { left: 12px; bottom: 10px; }
 .hud-br { right: 10px; bottom: 10px; text-align: right; color: var(--orange);
   border-color: var(--orange); font-size: 10px;
   animation: splitglow 1.2s ease-in-out infinite alternate; }
+.canvas-wrap.split-on .hud-bl { bottom: 72px; }
 
 /* ---------- instrument cluster: cockpit dial ---------- */
 .gauge-zone { display: flex; gap: 18px; align-items: center; margin: 0 8px 10px; padding: 12px 18px; }
