@@ -117,6 +117,8 @@ input[type=range] { width: 100%; accent-color: var(--orange); background: var(--
 
 /* ---------- matrix view ---------- */
 .matrix-wrap, .impact-wrap { padding: 18px 22px; }
+.impact-wrap { display: grid; grid-template-columns: 1fr 330px; gap: 0 30px; align-items: start; }
+@media (max-width: 1100px) { .impact-wrap { grid-template-columns: 1fr; } }
 .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .filters select { background: var(--panel); border: 1px solid var(--line); color: var(--text);
   padding: 7px 10px; font: 11px var(--mono); }
@@ -142,6 +144,24 @@ tr.rowbtn { cursor: pointer; } tr.rowbtn:hover { background: var(--panel2); }
 .tl-card h4 { margin: 3px 0 5px; font-size: 13px; }
 .tl-card p { font-size: 12px; color: #b9c9dc; }
 .tl-card a { color: var(--orange); font-size: 11px; text-decoration: none; }
+
+/* ---------- mission briefing (first-load orientation) ---------- */
+#briefing { position: fixed; inset: 0; z-index: 200; background: rgba(7,9,13,.9); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 20px; }
+.brief-card { max-width: 620px; max-height: 92vh; overflow-y: auto; background: var(--panel2);
+  border: 1px solid var(--line); border-top: 3px solid var(--orange); padding: 26px 30px; }
+.brief-tag { color: var(--orange); font-size: 10px; letter-spacing: 2px; }
+.brief-card h2 { font-size: 17px; margin: 10px 0 12px; color: var(--text); line-height: 1.45; }
+.brief-card > p { font-size: 12px; color: #b9c9dc; line-height: 1.6; margin-bottom: 14px; }
+.brief-facts { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 0; margin-bottom: 14px; }
+.brief-facts dt { color: var(--cyan); }
+.brief-facts dd { color: #b9c9dc; font-size: 11px; line-height: 1.5; }
+.brief-steps { margin: 0 0 18px 16px; }
+.brief-steps li { font-size: 12px; color: var(--text); line-height: 1.7; }
+.brief-steps li::marker { color: var(--orange); }
+#brief-go { font: inherit; font-size: 12px; letter-spacing: 2px; color: var(--orange);
+  background: transparent; border: 1px solid var(--orange); padding: 10px 22px; cursor: pointer; }
+#brief-go:hover { background: var(--orange); color: #07090d; }
 
 /* ---------- inspector ---------- */
 .inspector { position: fixed; inset: 0 0 0 auto; width: min(470px, 94vw); background: var(--panel);

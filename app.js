@@ -98,6 +98,8 @@ function wireControls() {
     $("split-btn").classList.toggle("on", state.split);
     updateAll();
   };
+  $("brief-go").onclick = () => $("briefing").remove();
+  document.addEventListener("keydown", e => e.key === "Enter" && $("briefing") && $("brief-go").click());
   // default selections
   $("env-presets").querySelector("[data-env=iss]").click();
   $("fuel-presets").querySelector("[data-fuel=pmma_sheet]").click();

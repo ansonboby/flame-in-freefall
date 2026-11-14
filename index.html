@@ -125,6 +125,27 @@
 <!-- verification inspector -->
 <div id="inspector" class="inspector"><div class="inspector-inner" id="inspector-body"></div></div>
 
+<div id="briefing">
+  <div class="brief-card">
+    <span class="brief-tag">MISSION BRIEFING</span>
+    <h2>A fire-safety cockpit for the Artemis era, built from NASA's own experiment record.</h2>
+    <p>Sixty years of microgravity combustion research — BASS, Saffire I-VI, FLEX, SAME — is scattered
+    across disconnected technical reports. PYRO-0G turns it into one verified dataset and a live
+    simulator that answers one question: <b>will this material burn in my mission's atmosphere?</b></p>
+    <dl class="kv brief-facts">
+      <dt>dataset</dt><dd>23 experiment runs from 22 NASA NTRS citations</dd>
+      <dt>trust</dt><dd>every record double-checked by a second, independent AI model — 83% pass, each with a verbatim source quote</dd>
+      <dt>index</dt><dd>live Flame Hazard Index — full formula exposed, no black box</dd>
+      <dt>honesty</dt><dd>numbers the papers don't state appear as DATA GAPS — never guessed</dd>
+    </dl>
+    <ol class="brief-steps">
+      <li>Pick a crew environment — ISS air, or a lunar base at 34% O2</li>
+      <li>Select a sample, then hit SPLIT 1g | 0g — same fuel, both gravities, side by side</li>
+      <li>Click any run to open its evidence: verbatim quote, NTRS source, AI-verifier verdict</li>
+    </ol>
+    <button id="brief-go">BEGIN SIMULATION</button>
+  </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>
