@@ -60,6 +60,8 @@ function wireViews() {
   document.querySelectorAll("#views button").forEach(b => b.onclick = () => {
     document.querySelectorAll("#views button").forEach(x => x.classList.toggle("active", x === b));
     document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + b.dataset.view));
+    // a canvas sized while display:none reads 0x0 — resize on every view switch
+    if (b.dataset.view === "simulator") resize();
   });
 }
 
@@ -234,6 +236,9 @@ function replayRun(id) {
   if (r.o2_conc_pct != null) { state.o2 = r.o2_conc_pct; $("o2").value = r.o2_conc_pct; }
   if (r.pressure_atm != null) { state.press = r.pressure_atm; $("press").value = r.pressure_atm; }
   if (r.airflow_cm_s != null) { state.flow = r.airflow_cm_s; $("flow").value = r.airflow_cm_s; }
+  // sliders now disagree with every crew preset — un-highlight them so the panel doesn't lie
+  [...$("env-presets").children].forEach(x => x.classList.remove("active"));
+  $("env-explainer").textContent = `REPLAYED ${r.investigation} RUN ${r.id.split("-").pop()} — snapped to the record's actual chamber conditions.`;
   const g = r.gravity_g;
   if (g != null) {
     const btn = [...document.querySelectorAll("#grav-seg button")]
@@ -416,6 +421,7 @@ function drawChamber(x0, w, g, t) {
 
 function tick(t) {
   const W = cv.width, H = cv.height, g = state.gravity;
+  if (W !== cv.clientWidth * devicePixelRatio) { resize(); return requestAnimationFrame(tick); } // self-heal a 0x0 canvas
   cx.clearRect(0, 0, W, H);
   // grid
   cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
@@ -428,6 +434,20 @@ function tick(t) {
     p.x += (flowPx / W + 0.0012 * (1 - g)); p.p += 0.05;
     if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
   }
+
+  // Earth limb — the port looks out at the planet rising along the chamber floor
+  cx.save();
+  cx.globalAlpha = 0.85;
+  const R = W * 0.85, cyE = H * 0.94 + R;
+  const eg = cx.createRadialGradient(W / 2, cyE, R * 0.96, W / 2, cyE, R);
+  eg.addColorStop(0, "#0a1a2c"); eg.addColorStop(0.6, "#123150"); eg.addColorStop(1, "#1d5a8a");
+  cx.fillStyle = eg;
+  cx.beginPath(); cx.arc(W / 2, cyE, R, 0, 7); cx.fill();
+  cx.strokeStyle = "rgba(63,208,216,.5)"; cx.lineWidth = 1.5 * devicePixelRatio;
+  cx.beginPath(); cx.arc(W / 2, cyE, R, 0, 7); cx.stroke();
+  cx.strokeStyle = "rgba(63,208,216,.18)"; cx.lineWidth = 8 * devicePixelRatio;
+  cx.beginPath(); cx.arc(W / 2, cyE, R + 5 * devicePixelRatio, 0, 7); cx.stroke();
+  cx.restore();
 
   cx.fillStyle = "rgba(255,169,110,.95)";
   cx.font = `${12 * devicePixelRatio}px JetBrains Mono, monospace`;
@@ -529,7 +549,7 @@ function openInspector(id) {
       <dt>environment</dt><dd>${esc(r.environment)}</dd>
       <dt>fuel shape / size</dt><dd>${esc(r.fuel_shape)} / ${esc(r.fuel_size)}</dd>
       <dt>pillar</dt><dd>${esc(r.pillar)}</dd>
-      <dt>sensors</dt><dd>${esc((r.sensors || []).join(", ")) || "—"}</dd>
+      <dt>sensors</dt><dd>${esc([].concat(r.sensors || []).join(", ")) || "—"}</dd>
       <dt>variables vs runs</dt><dd>${esc(r.variables_vs_other_runs)}</dd>
     </dl>
     <h4>JEV VERIFICATION (independent decision model)</h4>

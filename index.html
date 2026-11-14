@@ -71,9 +71,12 @@
         <div class="hud hud-bl" id="hud-left"></div>
         <div class="hud hud-br" id="hud-right" hidden></div>
       </div>
+      <div class="hazard-strip" aria-hidden="true"></div>
+      <div class="port-plate">OBSERVATION PORT · COMBUSTION DECK A</div>
       <div class="gauge-zone">
         <div class="gauge">
           <svg viewBox="0 0 120 120">
+            <circle class="gauge-ticks" cx="60" cy="60" r="54"/>
             <circle class="gauge-bg" cx="60" cy="60" r="50"/>
             <circle class="gauge-arc" id="gauge-arc" cx="60" cy="60" r="50"/>
           </svg>
@@ -132,18 +135,18 @@
   <div class="brief-card">
     <span class="brief-tag">MISSION BRIEFING</span>
     <h2>A fire-safety cockpit for the Artemis era, built from NASA's own experiment record.</h2>
-    <p>Sixty years of microgravity combustion research — BASS, Saffire I-VI, FLEX, SAME — is scattered
+    <p>Sixty years of microgravity combustion research (BASS, Saffire I-VI, FLEX, SAME) is scattered
     across disconnected technical reports. PYRO-0G turns it into one verified dataset and a live
     simulator that answers one question: <b>will this material burn in my mission's atmosphere?</b></p>
     <dl class="kv brief-facts">
       <dt>dataset</dt><dd>25 experiment runs from 23 NASA NTRS citations</dd>
-      <dt>trust</dt><dd>every record double-checked by a second, independent AI model — 80% pass, each with a verbatim source quote</dd>
-      <dt>index</dt><dd>live Flame Hazard Index — full formula exposed, no black box</dd>
-      <dt>honesty</dt><dd>numbers the papers don't state appear as DATA GAPS — never guessed</dd>
+      <dt>trust</dt><dd>every record double-checked by a second, independent AI model; 80% pass, each with a verbatim source quote</dd>
+      <dt>index</dt><dd>live Flame Hazard Index: full formula exposed, no black box</dd>
+      <dt>honesty</dt><dd>numbers the papers don't state appear as DATA GAPS, never guessed</dd>
     </dl>
     <ol class="brief-steps">
-      <li>Pick a crew environment — ISS air, or a lunar base at 34% O2</li>
-      <li>Select a sample, then hit SPLIT 1g | 0g — same fuel, both gravities, side by side</li>
+      <li>Pick a crew environment: ISS air, or a lunar base at 34% O2</li>
+      <li>Select a sample, then hit SPLIT 1g | 0g: same fuel, both gravities, side by side</li>
       <li>Click any run to open its evidence: verbatim quote, NTRS source, AI-verifier verdict</li>
     </ol>
     <button id="brief-go">BEGIN SIMULATION</button>
