@@ -420,8 +420,10 @@ function drawChamber(x0, w, g, t) {
 }
 
 function tick(t) {
-  const W = cv.width, H = cv.height, g = state.gravity;
-  if (W !== cv.clientWidth * devicePixelRatio) { resize(); return requestAnimationFrame(loop); } // self-heal a 0x0 canvas
+  const g = state.gravity;
+  const tw = Math.round(cv.clientWidth * devicePixelRatio), th = Math.round(cv.clientHeight * devicePixelRatio);
+  if (cv.width !== tw || cv.height !== th) { cv.width = tw; cv.height = th; } // integer-safe self-heal: the old float compare never matched at fractional dpr/zoom, so resize() cleared the canvas every frame
+  const W = cv.width, H = cv.height;
   cx.clearRect(0, 0, W, H);
   // grid
   cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
