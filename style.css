@@ -252,7 +252,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 20px; border-radius: 
 .qa-hit b { color: var(--orange); }
 
 /* ---------- matrix view ---------- */
-.matrix-wrap, .impact-wrap { padding: 18px 22px; }
+.matrix-wrap, .impact-wrap { padding: 18px 22px; height: 100%; } /* fixed-height main + auto height never scrolls — the column panels only scroll because they stretch */
 .impact-wrap { display: grid; grid-template-columns: 1fr 330px; gap: 0 30px; align-items: start; }
 @media (max-width: 1100px) { .impact-wrap { grid-template-columns: 1fr; } }
 .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
