@@ -464,6 +464,21 @@ function drawChamber(x0, w, g, t) {
       cx.beginPath();
       cx.arc(cxp + lean * 0.5, cyp - rad * 0.4, rad * 1.35 + 3 * Math.sin(t / 500), 0, 7);
       cx.stroke();
+      // bright core: the microgravity ball reads as "a real burning flame" on camera
+      cx.fillStyle = `rgba(200,230,255,${0.4 + 0.18 * Math.sin(t / 600)})`;
+      cx.beginPath(); cx.arc(cxp + lean * 0.5, cyp - rad * 0.4, rad * 0.26, 0, 7); cx.fill();
+    }
+    if (g > 0.05) {
+      // embers: hot soot detaching off the plume tip — the burn is alive, not a static teardrop
+      cx.fillStyle = "rgba(255,150,60,.85)";
+      for (let i = 0; i < 6; i++) {
+        const ph = ((t / 16 + i * 61) % 140) / 140;
+        cx.globalAlpha = (1 - ph) * 0.75;
+        cx.beginPath();
+        cx.arc(cxp + lean * 0.5 + Math.sin(t / 280 + i * 2.4) * 9 * K, cyp - hgt - ph * 120 * K, 1.6 * devicePixelRatio, 0, 7);
+        cx.fill();
+      }
+      cx.globalAlpha = 1;
     }
   }
 }
@@ -576,11 +591,11 @@ function renderMatrixTable() {
 function renderImpact() {
   const cards = Object.values(STORY).sort((a, b) => String(a.era).localeCompare(String(b.era)));
   $("timeline").innerHTML = `<h2 style="font-size:11px;letter-spacing:2px;color:var(--dim);margin-bottom:10px">WHY IT MATTERS — FIRE SAFETY TIMELINE</h2>` +
-    cards.map(c => `<div class="tl-card"><span class="era">${esc(c.era)}</span><h4>${esc(c.title)}</h4><p>${esc(c.body)}</p>
+    cards.map(c => `<div class="tl-card${c.era === "2026" ? " peak" : ""}"><span class="era">${esc(c.era)}</span><h4>${esc(c.title)}</h4><p>${esc(c.body)}</p>
       ${c.url ? `<a href="${c.url}" target="_blank">SOURCE ↗</a>` : ""}</div>`).join("");
   fetch("data/sources.json").then(r => r.json()).then(s => {
     $("impact-sources").innerHTML = `<h2 style="font-size:11px;letter-spacing:2px;color:var(--dim);margin:16px 0 8px">CORPUS SOURCES (${s.length})</h2>` +
-      s.map(x => `<div class="src-chip"><a href="${esc(x.source_url || "#")}" target="_blank" rel="noopener">${esc((x.file || "").replace(/\.(txt|md)$/i, ""))}</a><span>${esc(x.description || "")}</span></div>`).join("");
+      s.map(x => `<div class="src-chip"><a href="${esc(x.source_url || "#")}" target="_blank" rel="noopener">${esc((x.file || "").replace(/\.(txt|md)$/i, ""))}</a><span>${esc((x.description || "").split("(abstracts from:")[0].trim())}</span></div>`).join("");
   });
 }
 
