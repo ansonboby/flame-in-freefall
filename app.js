@@ -330,12 +330,18 @@ function runQA(q) {
 
 /* ---------- canvas ---------- */
 const cv = $("chamber"), cx = cv.getContext("2d");
-/* per-env cabin light: drift tracers take the deck accent, the limb out the port is the world outside */
+/* per-env cabin light: drift tracers take the deck accent, the port looks out a real place with real light */
 const ENV_TINT = { iss: "63,208,216", orion: "244,192,74", lunar: "201,213,230", rover: "255,158,102" };
-const LIMB = { iss: ["#0a1a2c", "#123150", "#1d5a8a"],            // Earth, full day side
-  orion: ["#0a111c", "#1c3a5c", "#2d5f8e"],                        // Earth falling behind — night side
-  lunar: ["#0c0e12", "#232730", "#3b4150"],                        // grey regolith horizon
-  rover: ["#1a0b07", "#3c1a10", "#612d1a"] };                      // Mars
+const WORLD = {   // sky = void tint behind the grid; R/apex = limb curvature & height; alpha = how close the world is
+  iss:   { sky: "rgba(9,18,30,.5)",   grid: "rgba(29,39,53,.6)",    rim: "rgba(63,208,216,.5)",   rim2: "rgba(63,208,216,.18)",   rimW: 8,
+           limb: ["#0a1a2c", "#123150", "#1d5a8a"], R: 0.85, apex: 0.94, alpha: 0.85, earthrise: 0, haze: 0 },
+  orion: { sky: "rgba(2,4,8,.72)",    grid: "rgba(48,38,20,.42)",   rim: "rgba(96,136,196,.38)",  rim2: "rgba(96,136,196,.12)",   rimW: 5,
+           limb: ["#060a12", "#0e2038", "#1b3c60"], R: 1.3,  apex: 0.985, alpha: 0.55, earthrise: 0, haze: 0 },  // Earth departed: thin far arc
+  lunar: { sky: "rgba(3,4,7,.78)",    grid: "rgba(58,62,74,.38)",   rim: "rgba(205,215,230,.5)",  rim2: "rgba(190,200,215,.12)",  rimW: 4,
+           limb: ["#101216", "#1d2026", "#434852"], R: 1.6,  apex: 0.94, alpha: 0.9,  earthrise: 1, haze: 0 },  // regolith plain + earthrise
+  rover: { sky: "rgba(34,16,9,.42)",  grid: "rgba(66,40,25,.42)",   rim: "rgba(255,176,128,.4)",  rim2: "rgba(255,150,100,.14)",  rimW: 6,
+           limb: ["#1a0b07", "#3c1a10", "#612d1a"], R: 0.9,  apex: 0.94, alpha: 0.9,  earthrise: 0, haze: 1 }   // Mars + dust haze
+};
 function resize() {
   cv.width = cv.clientWidth * devicePixelRatio; cv.height = cv.clientHeight * devicePixelRatio;
 }
@@ -503,10 +509,12 @@ function drawChamber(x0, w, g, t) {
 function tick(t) {  const g = state.gravity;
   const tw = Math.round(cv.clientWidth * devicePixelRatio), th = Math.round(cv.clientHeight * devicePixelRatio);
   if (cv.width !== tw || cv.height !== th) { cv.width = tw; cv.height = th; } // integer-safe self-heal: the old float compare never matched at fractional dpr/zoom, so resize() cleared the canvas every frame
-  const W = cv.width, H = cv.height;
+  const W = cv.width, H = cv.height, wd = WORLD[state.env] || WORLD.iss;
   cx.clearRect(0, 0, W, H);
+  // the void outside: each sky carries its own depth
+  cx.fillStyle = wd.sky; cx.fillRect(0, 0, W, H);
   // grid
-  cx.strokeStyle = "rgba(29,39,53,.6)"; cx.lineWidth = 1;
+  cx.strokeStyle = wd.grid; cx.lineWidth = 1;
   for (let x = 0; x < W; x += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
   for (let y = 0; y < H; y += 60 * devicePixelRatio) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
 
@@ -517,19 +525,30 @@ function tick(t) {  const g = state.gravity;
     if (p.x > 1.02) { p.x = -0.02; p.y = Math.random(); }
   }
 
-  // Earth limb — the port looks out at the planet rising along the chamber floor
+  // the world outside the port — curvature and height are per-environment
   cx.save();
-  cx.globalAlpha = 0.85;
-  const R = W * 0.85, cyE = H * 0.94 + R;
+  cx.globalAlpha = wd.alpha;
+  const R = W * wd.R, cyE = H * wd.apex + R;
   const eg = cx.createRadialGradient(W / 2, cyE, R * 0.96, W / 2, cyE, R);
-  const lc = LIMB[state.env] || LIMB.iss;
-  eg.addColorStop(0, lc[0]); eg.addColorStop(0.6, lc[1]); eg.addColorStop(1, lc[2]);
+  eg.addColorStop(0, wd.limb[0]); eg.addColorStop(0.6, wd.limb[1]); eg.addColorStop(1, wd.limb[2]);
   cx.fillStyle = eg;
   cx.beginPath(); cx.arc(W / 2, cyE, R, 0, 7); cx.fill();
-  cx.strokeStyle = "rgba(63,208,216,.5)"; cx.lineWidth = 1.5 * devicePixelRatio;
+  cx.strokeStyle = wd.rim; cx.lineWidth = 1.5 * devicePixelRatio;
   cx.beginPath(); cx.arc(W / 2, cyE, R, 0, 7); cx.stroke();
-  cx.strokeStyle = "rgba(63,208,216,.18)"; cx.lineWidth = 8 * devicePixelRatio;
+  cx.strokeStyle = wd.rim2; cx.lineWidth = wd.rimW * devicePixelRatio;
   cx.beginPath(); cx.arc(W / 2, cyE, R + 5 * devicePixelRatio, 0, 7); cx.stroke();
+  if (wd.haze) {  // Mars: dust catches the light in a band above the limb
+    const hz = cx.createLinearGradient(0, H * 0.7, 0, H * 0.94);
+    hz.addColorStop(0, "rgba(210,120,70,0)"); hz.addColorStop(1, "rgba(210,120,70,.14)");
+    cx.fillStyle = hz; cx.fillRect(0, H * 0.7, W, H * 0.24);
+  }
+  if (wd.earthrise) {  // Lunar Base: one blue jewel over a grey plain
+    const ex = W * 0.62, ey = H * 0.2, er = W * 0.016;
+    const gr = cx.createRadialGradient(ex, ey, 0, ex, ey, er * 3);
+    gr.addColorStop(0, "rgba(140,200,255,.9)"); gr.addColorStop(0.4, "rgba(46,118,196,.5)"); gr.addColorStop(1, "rgba(46,118,196,0)");
+    cx.fillStyle = gr; cx.beginPath(); cx.arc(ex, ey, er * 3, 0, 7); cx.fill();
+    cx.fillStyle = "rgba(168,216,255,.95)"; cx.beginPath(); cx.arc(ex, ey, er * 0.85, 0, 7); cx.fill();
+  }
   cx.restore();
 
   cx.fillStyle = "rgba(255,169,110,.95)";

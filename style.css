@@ -6,33 +6,40 @@
   --bolt: #46587a; --bevel: rgba(190,215,240,.06);
   --text: #cfe0ee; --dim: #8494aa; --orange: #ff7a2f; --cyan: #3fd0d8;
   --red: #ff5d5d; --amber: #f4b942; --green: #46e08c;
+  --ambience: radial-gradient(900px 420px at 72% -8%, color-mix(in srgb, var(--cyan) 4%, transparent), rgba(0,0,0,0) 65%);
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
-/* per-environment deck lighting: same hull, different sky — accents shift, semantics (red/green/orange) never do */
+/* per-environment deck lighting: same hull, different sky — accents shift, semantics (red/green/orange) never do.
+   Each env carries a light source (--ambience), a bevel strength (how hard the sun hits the hull) and its accent. */
 :root[data-env="orion"] {
   --bg: #090705; --hull: #110d06; --panel: #151007; --panel2: #1a1409; --line: #362810;
-  --frame: #3a2d14; --bolt: #7c6128; --bevel: rgba(240,205,140,.07);
+  --frame: #3a2d14; --bolt: #7c6128; --bevel: rgba(240,205,140,.045);
   --text: #e6dcc4; --dim: #96866a; --cyan: #f4c04a;
+  --ambience: radial-gradient(1100px 520px at 50% 118%, color-mix(in srgb, var(--cyan) 5%, transparent), rgba(0,0,0,0) 70%);
 }
 :root[data-env="lunar"] {
   --bg: #08090c; --hull: #0e1014; --panel: #121419; --panel2: #17191f; --line: #2c303a;
-  --frame: #333945; --bolt: #606a78; --bevel: rgba(225,232,244,.08);
+  --frame: #333945; --bolt: #606a78; --bevel: rgba(235,240,248,.11);
   --text: #dfe5ee; --dim: #8e97a6; --cyan: #c9d5e6;
+  --ambience: radial-gradient(1000px 380px at 50% -12%, color-mix(in srgb, var(--cyan) 6%, transparent), rgba(0,0,0,0) 60%);
 }
 :root[data-env="rover"] {
   --bg: #0a0605; --hull: #150c08; --panel: #190e0a; --panel2: #1f120c; --line: #3c2417;
   --frame: #442a1a; --bolt: #8a5636; --bevel: rgba(240,180,130,.07);
   --text: #ecdbcc; --dim: #a28a78; --cyan: #ff9e66;
+  --ambience: radial-gradient(1200px 500px at 28% -10%, color-mix(in srgb, var(--cyan) 5%, transparent), rgba(0,0,0,0) 70%);
 }
+/* instrument phosphor: the readouts are lit glass, not printed text */
+.tstat b, .gauge-num b { text-shadow: 0 0 12px color-mix(in srgb, var(--cyan) 30%, transparent); }
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--text); font: 13px/1.5 var(--mono); overflow: hidden;
   background-image:
-    radial-gradient(900px 420px at 72% -8%, color-mix(in srgb, var(--cyan) 4%, transparent), rgba(0,0,0,0) 65%),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 118px, rgba(35,46,64,.28) 118px 120px),
-    repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 158px, rgba(35,46,64,.2) 158px 160px);
+    var(--ambience),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 118px, color-mix(in srgb, var(--line) 28%, transparent) 118px 120px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 158px, color-mix(in srgb, var(--line) 20%, transparent) 158px 160px);
   scrollbar-color: var(--line) var(--bg); }
-::selection { background: color-mix(in srgb, var(--cyan) 30%, transparent); color: #eaffff; }
+::selection { background: color-mix(in srgb, var(--cyan) 30%, transparent); color: var(--text); }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
@@ -171,11 +178,11 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 20px; border-radius: 
   box-shadow:
     0 0 0 5px var(--hull), 0 0 0 6px var(--bolt), 0 0 0 12px var(--bg), 0 0 0 13px var(--line),
     0 12px 30px rgba(0,0,0,.5),
-    inset 0 0 70px rgba(0,0,0,.5); }
+    inset 0 0 70px rgba(0,0,0,.5), inset 0 -46px 90px color-mix(in srgb, var(--cyan) 5%, transparent); }
 .canvas-wrap::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   border-radius: 12px;
   background:
-    linear-gradient(115deg, rgba(190,225,255,.06) 0%, rgba(190,225,255,0) 24%),
+    linear-gradient(115deg, color-mix(in srgb, var(--cyan) 8%, transparent) 0%, rgba(0,0,0,0) 24%),
     radial-gradient(120% 90% at 50% 112%, rgba(0,0,0,0) 62%, rgba(0,0,0,.32)); }
 #chamber { width: 100%; height: 100%; display: block; }
 .chamber-tag { position: absolute; top: 12px; left: 16px; font-size: 10px; letter-spacing: 1.5px;
