@@ -77,6 +77,7 @@ function wireControls() {
     `<button data-fuel="${k}">${f.label}<small>${f.sub}</small></button>`).join("");
   document.querySelectorAll("[data-env]").forEach(b => b.onclick = () => {
     state.env = b.dataset.env; const e = ENV_PRESETS[state.env];
+    document.documentElement.dataset.env = state.env;
     state.o2 = e.o2; state.press = e.press;
     $("o2").value = e.o2; $("press").value = e.press;
     $("env-explainer").textContent = e.why;
@@ -306,14 +307,20 @@ function runQA(q) {
   const hits = RECORDS.map(r => {
     const hay = TOKEN([r.objective, r.key_finding, r.evidence_quote, r.fuel].join(" "));
     return { r, s: toks.reduce((a, t) => a + (hay.some(x => x.startsWith(t) || t.startsWith(x)) ? 1 : 0), 0) / toks.length };
-  }).filter(h => h.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);
+  }).sort((a, b) => b.s - a.s).slice(0, 3);
   // tangential quotes must never pose as answers: strong hits speak for the archive,
-  // weak ones only surface under an explicit not-an-answer label
-  const strong = hits.filter(h => h.s >= 0.5), weak = hits.filter(h => h.s < 0.5);
-  const shown = strong.length ? strong : weak;
-  const labeled = !strong.length && shown.length;
+  // weak ones surface under an explicit not-an-answer label, and a total miss pivots
+  // to the current sample's runs — the archive always replies, never a dead end
+  const strong = hits.filter(h => h.s >= 0.5), weak = hits.filter(h => h.s > 0 && h.s < 0.5);
+  const shown = strong.length ? strong : weak.length ? weak
+    : (() => { const alt = RECORDS.filter(r => TOKEN(r.fuel).some(x => x === state.fuel));
+        return (alt.length ? alt : RECORDS).slice(0, 3).map(r => ({ r, s: 0 })); })();
+  const labeled = !strong.length;
+  const fallbackLabel = weak.length
+    ? "CLOSEST ARCHIVE MENTIONS — NOT AN ANSWER TO YOUR QUESTION"
+    : `NO DIRECT MATCH — THE RUNS FOR YOUR CURRENT SAMPLE (${FUELS[state.fuel].label})`;
   $("qa-out").innerHTML = verdict +
-    (labeled ? `<p class="explainer qa-fallback">CLOSEST ARCHIVE MENTIONS — NOT AN ANSWER TO YOUR QUESTION</p>` : "") +
+    (labeled ? `<p class="explainer qa-fallback">${fallbackLabel}</p>` : "") +
     (shown.length ? shown.map(({ r }) =>
       `<div class="qa-hit">${esc((r.key_finding || r.objective || "").split(/(?<=[.!?]) /)[0])} <b>[${esc(r.investigation)}]</b>
        — <span class="insp-link" role="button" tabindex="0" data-id="${r.id}">inspector</span></div>`).join("")
@@ -323,6 +330,12 @@ function runQA(q) {
 
 /* ---------- canvas ---------- */
 const cv = $("chamber"), cx = cv.getContext("2d");
+/* per-env cabin light: drift tracers take the deck accent, the limb out the port is the world outside */
+const ENV_TINT = { iss: "63,208,216", orion: "244,192,74", lunar: "201,213,230", rover: "255,158,102" };
+const LIMB = { iss: ["#0a1a2c", "#123150", "#1d5a8a"],            // Earth, full day side
+  orion: ["#0a111c", "#1c3a5c", "#2d5f8e"],                        // Earth falling behind — night side
+  lunar: ["#0c0e12", "#232730", "#3b4150"],                        // grey regolith horizon
+  rover: ["#1a0b07", "#3c1a10", "#612d1a"] };                      // Mars
 function resize() {
   cv.width = cv.clientWidth * devicePixelRatio; cv.height = cv.clientHeight * devicePixelRatio;
 }
@@ -343,7 +356,7 @@ function drawChamber(x0, w, g, t) {
   const cool = isDroplet && state.o2 < 30;
 
   // airflow particles (render only; advection happens once per frame in tick)
-  cx.fillStyle = "rgba(63,208,216,.45)";
+  cx.fillStyle = `rgba(${ENV_TINT[state.env] || ENV_TINT.iss},.45)`;
   for (const p of particles) {
     const yy = p.y + 0.03 * Math.sin(p.p + t / 900);
     cx.beginPath();
@@ -353,7 +366,7 @@ function drawChamber(x0, w, g, t) {
 
   // airflow vector arrows when the fan is on
   if (state.flow > 0) {
-    cx.strokeStyle = cx.fillStyle = `rgba(63,208,216,${0.25 + 0.55 * (state.flow / 50)})`;
+    cx.strokeStyle = cx.fillStyle = `rgba(${ENV_TINT[state.env] || ENV_TINT.iss},${0.25 + 0.55 * (state.flow / 50)})`;
     cx.lineWidth = 1.5 * devicePixelRatio;
     const len = (14 + state.flow * 0.8) * devicePixelRatio, yA = H * 0.30;
     for (let i = 0; i < 4; i++) {
@@ -509,7 +522,8 @@ function tick(t) {  const g = state.gravity;
   cx.globalAlpha = 0.85;
   const R = W * 0.85, cyE = H * 0.94 + R;
   const eg = cx.createRadialGradient(W / 2, cyE, R * 0.96, W / 2, cyE, R);
-  eg.addColorStop(0, "#0a1a2c"); eg.addColorStop(0.6, "#123150"); eg.addColorStop(1, "#1d5a8a");
+  const lc = LIMB[state.env] || LIMB.iss;
+  eg.addColorStop(0, lc[0]); eg.addColorStop(0.6, lc[1]); eg.addColorStop(1, lc[2]);
   cx.fillStyle = eg;
   cx.beginPath(); cx.arc(W / 2, cyE, R, 0, 7); cx.fill();
   cx.strokeStyle = "rgba(63,208,216,.5)"; cx.lineWidth = 1.5 * devicePixelRatio;
