@@ -300,7 +300,10 @@ function renderChips() {
 function runQA(q) {
   $("qa-out").dataset.q = q;
   const toks = TOKEN(q);
-  const vm = RECORDS.find(r => toks.some(t => TOKEN(r.fuel).some(x => x === t)));
+  // best fuel-token match, not the first: "PMMA sheet" must cite a sheet run, not the first PMMA record
+  const vm = RECORDS.map(r => ({ r, s: toks.reduce((a, t) =>
+    a + (TOKEN(r.fuel).some(x => x === t || x.startsWith(t) || t.startsWith(x)) ? 1 : 0), 0) }))
+    .filter(h => h.s > 0).sort((a, b) => b.s - a.s)[0]?.r;
   const verdict = vm
     ? `<div class="qa-verdict">VERIFIED RUN — <b>${esc(vm.fuel)}</b> [${esc(vm.investigation)}] · ${vm.hazard_index != null ? "HI " + vm.hazard_index : "not scored"} · ${esc(((vm.outcome || "").replace(/_/g, " ")).split(/(?<=[.!?]) /)[0])} · <span class="insp-link" role="button" tabindex="0" data-id="${vm.id}">inspector</span></div>`
     : "";

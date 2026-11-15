@@ -157,14 +157,16 @@ def chat(system, user, max_retries=3):
                 key = json.loads(auth.read_text()).get("opencode", {}).get("key")
         if not key:
             sys.exit("BACKEND=opencode needs OPENCODE_API_KEY")
+        model = os.environ.get("OPENCODE_MODEL", "glm-5.3-flash-free")
         resp = _post_json(OPENCODE_URL, {
-            "model": os.environ.get("OPENCODE_MODEL", "glm-5.3-flash-free"),
+            "model": model,
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}],
         }, headers={"Authorization": f"Bearer {key}"})
         if "error" in resp:
             raise RuntimeError(f"opencode backend: {resp['error'].get('type')}: "
                                f"{resp['error'].get('message')}")
+        LAST_MODEL = model
         return resp["choices"][0]["message"]["content"]
     if BACKEND in ("openrouter", "nvidia", "openai"):  # OpenAI-compatible hosted backends
         url, envkey, defmodel = {
@@ -268,8 +270,8 @@ def extract_file(path, done_ids=()):
         for attempt in range(1, 4):
             try:
                 reply = chat(prompt, sec if len(sec) < 40000 else sec[:40000])
-            except RuntimeError as e:
-                err = str(e)  # backend outage/quota — retry, never kill the whole run
+            except Exception as e:
+                err = str(e)  # outage/quota/blocked-or-nonJSON reply — retry, never kill the whole run
             else:
                 try:
                     rec = parse_json(reply)

@@ -4,7 +4,7 @@
 All scoring goes through flame_core — the site never re-implements the formula.
 Run after every extraction/verification refresh:  python3 build_site_data.py
 """
-import csv, json, pathlib, datetime
+import csv, json, math, pathlib, datetime, sys
 import flame_core as fc
 
 ROOT = pathlib.Path(__file__).parent
@@ -12,6 +12,27 @@ DATA = ROOT / "public" / "data"
 DATA.mkdir(parents=True, exist_ok=True)
 
 records = fc.rescore(fc.load_records(ROOT / "records.json"))
+for r in records:
+    r.pop("_source_text", None)  # runtime-only; never ship the corpus inside the data file
+
+# gauge parity: the site's JS rounds with Math.round (half-up), flame_core with round (half-even).
+# A raw HI on an exact .x5 boundary would show two different numbers on the same page — fail loudly.
+def raw_hi(r):
+    p = [fc.severity(r), fc.oxygen_factor(r.get("o2_conc_pct")), fc.extinction_factor(r),
+         fc.confidence_factor(r.get("jev_evidence_score"))]
+    if any(x is None for x in p):
+        return None
+    return 100 * (0.35 * p[0] + 0.25 * p[1] + 0.20 * p[2] + 0.20 * p[3])
+
+for r in records:
+    if r.get("fuel_category") != "solid":
+        continue
+    raw = raw_hi(r)
+    if raw is None:
+        continue
+    js = math.floor(raw * 10 + 0.5) / 10  # Math.round — what the gauge computes
+    if round(raw, 1) != js:               # round() — what the matrix stores
+        sys.exit(f"HI rounding parity broke at {r['id']}: matrix {round(raw, 1)} vs gauge {js}")
 
 # Arena: each solid record re-scored under the 3 mission environments.
 ARENAS = ["spacecraft", "lunar_base", "rover"]

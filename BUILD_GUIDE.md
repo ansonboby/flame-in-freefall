@@ -69,7 +69,7 @@ Submission closes **Sunday Nov 15, 11:59 PM local**. Team roles: Data lead / App
 ## Judging targets (1–5 each: Impact · Creativity · Validity · Relevance · Presentation)
 
 - **Impact:** Artemis II opener; Moon/Mars crews + Earth firefighter spinoffs.
-- **Creativity:** dual-model verification layer (Llama extracts, Jev confirms).
+- **Creativity:** dual-model verification layer (AI extracts, an independent ladder confirms).
 - **Validity:** working app, visible formula, verified quotes, CSV export, clean UI.
 - **Relevance:** PSI data is the product; named investigations; environment filter.
 - **Presentation:** the 30s script, timed. Primary award target: **Best Use of Data**.

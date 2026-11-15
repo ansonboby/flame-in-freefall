@@ -40,16 +40,16 @@ verbatim quote, NTRS source, dual-model verdict; CSV export of the full dataset)
 how it works (pipeline: `corpus/` PSI page text → `extract_records.py` (multi-provider
 extraction: gemini-2.5-flash, gpt-5.4-mini, GLM manual re-extraction — model logged per
 record) → `verify_records.py` (independent decision-model ladder: jev-1.13-free →
-jev-1.13 → gemini-decision-1 → gpt-6-luna-decision → Llama self-check → human review)
+jev-1.13 → gemini-decision-1 → gpt-6-luna-decision → OpenAI self-check → human review)
 → `build_site_data.py` → static cockpit),
 benefits (mission planners, researchers — the challenge's named audience), tools
-(Python pipeline calling model APIs + Ollama fallback; frontend: vanilla JS +
+(Python pipeline calling model APIs + OpenAI self-check fallback; frontend: vanilla JS +
 Canvas, deployed on Vercel; data: PSI/NTRS).
 
 **Use of SI (disclosure):** extraction by gemini-2.5-flash and gpt-5.4-mini (per-record
 model shown in the app's inspector), GLM glm-5.3-flash-free for manual lens re-extraction;
 verification by independent decision models (jev-1.13-free → jev-1.13 → gemini-decision-1
-→ gpt-6-luna-decision → Llama self-check → human review); coding assistant used for
+→ gpt-6-luna-decision → OpenAI self-check → human review); coding assistant used for
 implementation. Code/data acknowledgment in metadata.
 Demo uses screen recordings only — no SI-generated imagery.
 
@@ -59,7 +59,7 @@ Investigations used: BASS, BASS-II, Saffire-I/II/III, SAME, SAME-R, FLEX, DAFT, 
 (Required field for Global Award eligibility — be specific.)
 
 **References:** every source in `sources.csv` + libraries (Python pipeline: model-provider
-APIs + Ollama fallback; frontend: vanilla JS + Canvas + SVG, no framework;
+APIs + OpenAI self-check fallback; frontend: vanilla JS + Canvas + SVG, no framework;
 hosting: Vercel; fonts: JetBrains Mono stack with system-mono fallback).
 
 **Demo video:** two beat-timed screen layers (≤30s, live app only, no SI-generated visuals):

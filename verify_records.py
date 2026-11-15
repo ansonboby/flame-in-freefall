@@ -6,8 +6,9 @@ from flame_extraction_kit_v2.md §5, then merges verdicts into records.json and
 rescores hazard_index via flame_core.
 
 Fallback ladder (§6): jev-1.13-free → jev-1.13 → gemini-decision-1 → gpt-6-luna-decision
-→ llama self-check (quote/number re-verification via Ollama) → human (needs_review.json).
-OPENCODE_API_KEY required for 1–4; without it we go straight to the Llama self-check.
+→ openai self-check (quote/number re-verification via the OpenAI API; degrades to a
+verbatim substring check without OPENAI_API_KEY) → human (needs_review.json).
+OPENCODE_API_KEY required for 1–4; without it we go straight to the OpenAI self-check.
 """
 import json
 import os
@@ -90,18 +91,42 @@ def call_systemone(model, state, questions, key):
         return None, 0
 
 
-def llama_selfcheck(rec):
-    """Fallback #5: ask the local extractor to re-verify its own record."""
+def openai_selfcheck(rec):
+    """Fallback #5: quote/number re-verification via the OpenAI API. Without
+    OPENAI_API_KEY (or if the call fails), degrades to a verbatim substring check."""
     import extract_records as ex
     q = rec.get("evidence_quote") or ""
     src = rec.get("_source_text", "")
     if not q or not src:
-        return {"model": "llama-self", "verified": False,
+        return {"model": "verbatim-check", "verified": False,
                 "note": "no quote or source text to re-check"}
-    verified = q.strip() in src
-    return {"model": "llama-self", "verified": verified,
-            "note": "verbatim quote check against source" if verified
-                    else "quote NOT found in source"}
+    degrade = lambda verified, why: {"model": "verbatim-check", "verified": verified,
+                                     "note": f"{why}; verbatim quote check"
+                                             if verified else f"{why}; quote NOT found in source"}
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        return degrade(q.strip() in src, "no OPENAI_API_KEY")
+    prompt = ("Re-verify this record against the source text. Answer ONLY JSON: "
+              '{"verified": true|false, "note": "one short sentence"}\n'
+              "verified = the evidence quote appears VERBATIM in the source AND every stated "
+              "condition (O2 %, pressure atm, airflow cm/s, gravity g) matches the source. "
+              "Be strict: any mismatch or missing quote = false.\n\n"
+              f"Evidence quote: {q}\nKey finding: {rec.get('key_finding')}\n"
+              f"Recorded conditions: O2 {rec.get('o2_conc_pct')}% / {rec.get('pressure_atm')} atm"
+              f" / {rec.get('airflow_cm_s')} cm/s / {rec.get('gravity_g')} g\n\n"
+              f"Source text:\n{src[:12000]}")
+    try:
+        resp = ex._post_json(ex.OPENAI_URL, {
+            "model": os.environ.get("OPENAI_MODEL", "gpt-5.4-mini"), "temperature": 0,
+            "messages": [{"role": "user", "content": prompt}],
+        }, headers={"Authorization": f"Bearer {key}"})
+        if "error" in resp:
+            raise RuntimeError(str(resp["error"])[:150])
+        ans = ex.parse_json(resp["choices"][0]["message"]["content"])
+    except Exception as e:
+        return degrade(q.strip() in src, f"openai self-check unavailable ({str(e)[:100]})")
+    return {"model": "openai-self", "verified": bool(ans.get("verified")),
+            "note": str(ans.get("note", ""))[:200]}
 
 
 def main():
@@ -130,7 +155,7 @@ def main():
                 break
             print(f"ladder: {model} unavailable (HTTP {code})")
     if model_used is None:
-        print("ladder: no hosted decision model available -> Llama self-check mode")
+        print("ladder: no hosted decision model available -> OpenAI self-check mode")
 
     verdicts = []
     for rec in records:
@@ -146,7 +171,7 @@ def main():
                 resp, code = call_systemone(model_used, state_for(rec), questions_for(rec), key)
             if code != 200 or not resp:
                 print(f"  {rec['id']}: systemone failed (HTTP {code}) -> self-check")
-                v = llama_selfcheck(rec)
+                v = openai_selfcheck(rec)
             else:
                 a = resp.get("answers", {})
                 rel_p = a.get("is_fire_safety_relevant", {}).get("noul")
@@ -161,13 +186,15 @@ def main():
                 v = {"model": model_used, "verified": bool(verified), "jev_category": cat,
                      "relevance_p": rel_p, "quote_p": quote_p, "evidence_score": es_score}
         else:
-            v = llama_selfcheck(rec)
+            v = openai_selfcheck(rec)
             rec["jev_verified"] = bool(v["verified"])
         verdicts.append({"id": rec["id"], **{k: v.get(k) for k in
                          ("model", "verified", "jev_category", "relevance_p", "quote_p",
                           "evidence_score", "note")}})
         print(f"  {rec['id']}: {v.get('model')} verified={v.get('verified')}")
 
+    for rec in records:
+        rec.pop("_source_text", None)  # corpus text is runtime-only — never persist it into records.json
     flame_core.rescore(records)
     RECORDS.write_text(json.dumps(records, indent=2))
     (ROOT / "jev_verdicts.json").write_text(json.dumps(verdicts, indent=2))

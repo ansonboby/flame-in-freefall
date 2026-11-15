@@ -55,7 +55,6 @@ def clean(t):
 
 def doc0():
     out = CORPUS / "00_researchers_guide.txt"
-    pdf = "/tmp/opencode/doc0.pdf"
     pdf = fetch(DOC0_URL)
     pathlib.Path("/tmp/opencode/doc0.pdf").write_bytes(pdf)
     subprocess.run(["pdftotext", "/tmp/opencode/doc0.pdf", str(out)], check=True)
